@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, Trash2, Calendar, ShoppingCart, Package } from 'lucide-react';
 import { getOrders, deleteOrder } from '../api/backend';
@@ -191,7 +192,9 @@ export function OrdersPage() {
               <div className="card-header">
                 <div className="order-title">
                   <ShoppingCart size={20} className="title-icon" />
-                  <h3 className="order-name">{order.name}</h3>
+                  <Link to={`/orders/${order.id}`} className="order-name">
+                    {order.name}
+                  </Link>
                 </div>
                 <div className="card-actions">
                   <motion.button
@@ -249,15 +252,20 @@ export function OrdersPage() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.2, delay: index * 0.05 }}
                       >
-                        <span className="item-name">
+                        <Link 
+                          to={`/products/${item.productId}`}
+                          className="item-name item-link"
+                        >
                           {item.productName || `Product ${item.productId}`}
-                        </span>
+                        </Link>
                         <span className="item-quantity">×{item.quantity}</span>
                       </motion.div>
                     ))}
                     {order.lineItems.length > 3 && (
                       <div className="line-item more-items">
-                        <span>+{order.lineItems.length - 3} more items</span>
+                        <Link to={`/orders/${order.id}`} className="view-more-link">
+                          +{order.lineItems.length - 3} more items
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -302,6 +310,7 @@ export function OrdersPage() {
             >
               <OrderForm
                 onCreated={handleCreate}
+                onCancel={() => setShowForm(false)}
               />
             </motion.div>
           </motion.div>

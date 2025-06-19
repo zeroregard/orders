@@ -3,6 +3,7 @@ import { Navigation } from './components/Navigation';
 import { ProductsPage } from './components/ProductsPage';
 import { OrdersPage } from './components/OrdersPage';
 import { ProductDetailPage } from './components/ProductDetailPage';
+import { OrderDetailPage } from './components/OrderDetailPage';
 import './App.css';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:id" element={<ProductDetailPage />} />
             <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/orders/:id" element={<OrderDetailPage />} />
           </Routes>
         </main>
         <footer className="app-footer">

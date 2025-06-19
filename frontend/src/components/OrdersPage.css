@@ -205,6 +205,12 @@
   font-size: 1.25rem;
   font-weight: 600;
   line-height: 1.3;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.order-name:hover {
+  color: #a855f7;
 }
 
 .card-actions {
@@ -306,6 +312,15 @@
   margin-right: 0.5rem;
 }
 
+.item-link {
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.item-link:hover {
+  color: #a855f7;
+}
+
 .item-quantity {
   color: #a855f7;
   font-weight: 600;
@@ -318,6 +333,16 @@
   justify-content: center;
   border: 1px dashed rgba(255, 255, 255, 0.2);
   background: transparent;
+}
+
+.view-more-link {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.view-more-link:hover {
+  color: #a855f7;
 }
 
 .loading, .error {

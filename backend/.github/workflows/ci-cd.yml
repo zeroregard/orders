@@ -1,0 +1,168 @@
+name: Auto-Order Backend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+jobs:
+  lint-test-build:
+    name: Lint, Test and Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: auto_order_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: 'backend/pnpm-lock.yaml'
+      
+      - name: Install pnpm
+        run: npm install -g pnpm
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Run linting
+        run: pnpm lint
+      
+      - name: Run TypeScript check
+        run: pnpm tsc --noEmit
+      
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/auto_order_test
+          NODE_ENV: test
+        run: pnpm test
+      
+      - name: Build application
+        run: pnpm build
+      
+      - name: Upload build artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-build
+          path: |
+            backend/dist
+            backend/package.json
+            backend/pnpm-lock.yaml
+          retention-days: 7
+  
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    needs: lint-test-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    defaults:
+      run:
+        working-directory: ./backend
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: backend-build
+          path: backend
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --service auto-order-api
+      
+      - name: Run database migrations
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway run npx prisma migrate deploy
+      
+      - name: Verify deployment
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          HEALTH_CHECK_URL=$(railway variables get APP_URL)/api/health
+          ATTEMPTS=0
+          MAX_ATTEMPTS=10
+          
+          echo "Checking deployment at $HEALTH_CHECK_URL"
+          
+          until $(curl --output /dev/null --silent --head --fail $HEALTH_CHECK_URL) || [ $ATTEMPTS -eq $MAX_ATTEMPTS ]; do
+            echo "Waiting for deployment to be ready... (Attempt $ATTEMPTS/$MAX_ATTEMPTS)"
+            ATTEMPTS=$((ATTEMPTS+1))
+            sleep 5
+          done
+          
+          if [ $ATTEMPTS -eq $MAX_ATTEMPTS ]; then
+            echo "Deployment verification failed after $MAX_ATTEMPTS attempts"
+            exit 1
+          fi
+          
+          echo "Deployment successful!"
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      
+      - name: Install pnpm
+        run: npm install -g pnpm
+      
+      - name: Run npm audit
+        run: pnpm audit --audit-level=high
+      
+      - name: Run Snyk scan
+        uses: snyk/actions/node@master
+        continue-on-error: true # Don't fail the build, just report
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --all-projects

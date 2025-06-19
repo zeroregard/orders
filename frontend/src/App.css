@@ -97,6 +97,7 @@
 /* Form Styles */
 .product-form, .order-form {
   width: 100%;
+  max-width: none;
 }
 
 .form-header {
@@ -137,6 +138,7 @@
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .close-button:hover {
@@ -219,6 +221,7 @@
   gap: 1rem;
   margin-top: 2rem;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .cancel-button {
@@ -230,6 +233,7 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-width: 120px;
 }
 
 .cancel-button:hover {
@@ -247,6 +251,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+  min-width: 140px;
 }
 
 .submit-button:hover:not(:disabled) {
@@ -326,6 +331,7 @@ body {
   .submit-button {
     width: 100%;
     justify-content: center;
+    min-width: auto;
   }
 }
 
@@ -371,6 +377,17 @@ body {
   
   .app-header h1 {
     font-size: 1.75rem;
+  }
+
+  /* Better form layout on desktop */
+  .form-actions {
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+  }
+
+  .cancel-button,
+  .submit-button {
+    flex-shrink: 0;
   }
 }
 
