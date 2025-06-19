@@ -19,6 +19,7 @@ model Product {
   name        String
   description String?
   price       Float?
+  iconId      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
