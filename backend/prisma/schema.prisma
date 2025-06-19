@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Product {
+  id          String @id @default(uuid())
+  name        String
+  description String?
+  price       Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  orderLineItems OrderLineItem[]
+  
+  @@map("products")
+}
+
+model Order {
+  id           String   @id @default(uuid())
+  name         String
+  creationDate DateTime
+  purchaseDate DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  lineItems    OrderLineItem[]
+  
+  @@map("orders")
+}
+
+model OrderLineItem {
+  id          String @id @default(uuid())
+  quantity    Int
+  productName String? // For on-the-fly product creation
+  createdAt   DateTime @default(now())
+  
+  // Foreign Keys
+  productId   String
+  orderId     String
+  
+  // Relations
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@map("order_line_items")
+}

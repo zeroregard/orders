@@ -1,1 +1,102 @@
-.tabs-root {\n  width: 100%;\n}\n.tabs-list {\n  display: flex;\n  border-bottom: 1px solid #23272f;\n  background: #181a20;\n}\n.tab-btn {\n  flex: 1 1 0;\n  padding: 1rem;\n  background: none;\n  border: none;\n  color: #bbb;\n  font-size: 1rem;\n  cursor: pointer;\n  transition: color 0.2s, background 0.2s;\n  border-bottom: 2px solid transparent;\n}\n.tab-btn.active {\n  color: #fff;\n  border-bottom: 2px solid #4a6fa5;\n  background: #23272f;\n}\n.tabs-content {\n  padding: 1rem 0;\n}\n
+/* Modern Tabs Component with Dark Mode */
+.tabs-container {
+  width: 100%;
+  margin-bottom: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs-nav {
+  display: flex;
+  width: 100%;
+  overflow-x: auto;
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  position: relative;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+
+.tabs-nav::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.tab-button {
+  flex: 1;
+  min-width: max-content;
+  border: none;
+  background: none;
+  padding: var(--space-md) var(--space-lg);
+  cursor: pointer;
+  position: relative;
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  z-index: 1;
+}
+
+.tab-button:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.tab-button.active {
+  color: var(--text-primary);
+}
+
+.tab-active-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--surface-variant);
+  border-radius: var(--radius-md);
+  z-index: -1;
+}
+
+.tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-content-container {
+  position: relative;
+  overflow: hidden;
+  min-height: 200px; /* Ensure space for content */
+}
+
+.tab-content {
+  width: 100%;
+}
+
+/* Mobile-first adjustments */
+@media (max-width: 640px) {
+  .tabs-nav {
+    padding: var(--space-xs);
+  }
+  
+  .tab-button {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.8rem;
+  }
+}
+
+/* Larger screens */
+@media (min-width: 768px) {
+  .tab-button {
+    font-size: 1rem;
+  }
+}
+
+.tabs-content {
+  padding: 1rem 0;
+}

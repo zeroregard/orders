@@ -5,10 +5,10 @@ A modern, modular Node.js (TypeScript) backend for personal purchase tracking, i
 ## Features
 - RESTful API for products and orders
 - Predicts next purchase date for products
-- In-memory data store (SQLite/PostgreSQL ready)
-- Zod-based request validation
-- OpenAPI docs at `/api/docs`
-- Modular code structure
+- PostgreSQL database support via Prisma ORM
+- Zod-based request validation and schema generation
+- OpenAPI/Swagger documentation at `/api/docs`
+- Modular code structure with proper separation of concerns
 - Unit, integration, and E2E tests (Jest + Supertest)
 - GitHub Actions CI pipeline
 
@@ -40,9 +40,9 @@ backend/
   src/
     models/         # TypeScript domain models
     schemas/        # Zod schemas for validation
-    data/           # In-memory data store
     routes/         # Express route modules
     tests/          # Jest/Supertest tests
+    prisma/         # Prisma ORM schema and migrations
     swagger.ts      # Swagger/OpenAPI setup
     index.ts        # App entrypoint
   package.json
