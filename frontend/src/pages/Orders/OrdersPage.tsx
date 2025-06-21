@@ -5,6 +5,7 @@ import { Search, Plus, Trash2, Calendar, ShoppingCart, Package } from 'lucide-re
 import { getOrders, deleteOrder } from '../../api/backend';
 import type { Order } from '../../types/backendSchemas';
 import { OrderForm } from './components/OrderForm';
+import { SkeletonCard } from '../../components';
 
 export function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -90,9 +91,41 @@ export function OrdersPage() {
   if (loading) {
     return (
       <div className="page">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-white text-lg">Loading orders...</div>
-        </div>
+        <motion.div
+          className="mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-white">Orders</h1>
+            <div className="w-36 h-12 bg-white/5 rounded-lg animate-pulse" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="mb-8 flex flex-col sm:flex-row gap-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <div className="relative flex-1">
+            <div className="w-full h-12 bg-white/5 rounded-lg animate-pulse" />
+          </div>
+          <div className="flex gap-2">
+            <div className="w-48 h-12 bg-white/5 rounded-lg animate-pulse" />
+            <div className="w-12 h-12 bg-white/5 rounded-lg animate-pulse" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <SkeletonCard variant="list" count={6} />
+        </motion.div>
       </div>
     );
   }

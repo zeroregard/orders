@@ -5,6 +5,7 @@ import { ArrowLeft, Calendar, ShoppingCart, Package, ExternalLink, AlertCircle, 
 import { getOrders } from '../../api/backend';
 import type { Order } from '../../types/backendSchemas';
 import { EditOrderForm } from './components/EditOrderForm';
+import { SkeletonCard } from '../../components';
 import './OrderDetailPage.css';
 
 export function OrderDetailPage() {
@@ -58,7 +59,42 @@ export function OrderDetailPage() {
   if (loading) {
     return (
       <div className="order-detail-page">
-        <div className="loading">Loading order...</div>
+        <motion.div
+          className="page-header"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="w-32 h-8 bg-white/5 rounded-lg animate-pulse" />
+        </motion.div>
+
+        <motion.div
+          className="order-detail-content"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <div className="order-info-card">
+            <SkeletonCard variant="detail" />
+          </div>
+
+          <motion.div
+            className="line-items-card"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <div className="line-items-header">
+              <div className="w-1/3 h-8 bg-white/5 rounded-lg animate-pulse" />
+            </div>
+
+            <div className="line-items-content">
+              <div className="line-items-list">
+                <SkeletonCard variant="list" count={3} />
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
     );
   }

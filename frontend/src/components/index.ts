@@ -10,4 +10,5 @@ export { Tabs } from './Tabs';
 export * from './Auth';
 export * from './Navigation';
 export * from './Products';
-export * from './Tabs'; 
+export * from './Tabs';
+export * from './Skeleton'; 

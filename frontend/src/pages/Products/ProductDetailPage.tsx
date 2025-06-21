@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import type { Product, PurchaseHistory } from '../../api/backend';
 import { getProducts, getPurchaseHistory, getPrediction } from '../../api/backend';
 import PurchaseGraph from '../../components/Products/PurchaseGraph';
+import { SkeletonCard } from '../../components';
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -47,8 +48,17 @@ export function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[200px] text-lg text-gray-400">
-        Loading...
+      <div className="p-8 max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <div className="w-1/3 h-8 bg-white/5 rounded-lg animate-pulse" />
+        </div>
+
+        <SkeletonCard variant="detail" className="mb-8" />
+
+        <div className="bg-white/5 border border-white/20 rounded-2xl p-6">
+          <div className="w-1/2 h-8 bg-white/5 rounded-lg animate-pulse mb-6" />
+          <SkeletonCard variant="graph" />
+        </div>
       </div>
     );
   }

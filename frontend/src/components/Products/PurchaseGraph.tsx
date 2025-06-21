@@ -11,6 +11,7 @@ interface DayData {
   date: string;
   quantity: number;
   isPredicted: boolean;
+  month: number; // Add month to track which month each day belongs to
 }
 
 const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predictedDate }) => {
@@ -34,7 +35,8 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
       allDays.push({
         date: dateStr,
         quantity: purchase?.quantity || 0,
-        isPredicted
+        isPredicted,
+        month: currentDate.getMonth()
       });
 
       currentDate.setDate(currentDate.getDate() + 1);
@@ -46,7 +48,7 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
   // Calculate color intensity based on quantity
   const getColorStyle = (quantity: number, isPredicted: boolean) => {
     if (quantity === 0 && !isPredicted) {
-      return { backgroundColor: '#ebedf0' };
+      return { backgroundColor: 'transparent' };
     }
 
     const intensity = purchaseHistory.max > 0 ? quantity / purchaseHistory.max : 0;
@@ -55,8 +57,8 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
 
     if (isPredicted) {
       return {
-        backgroundColor: 'transparent',
-        border: `2px dashed rgb(${color})`,
+        backgroundColor: 'red',
+        border: `8px solid rgba(255, 255, 255, 1})`,
       };
     }
 
@@ -76,34 +78,84 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
   }, []);
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  // Split months into two rows
+  const topMonths = months.slice(0, 6);
+  const bottomMonths = months.slice(6);
 
-  return (
-    <div className="purchase-graph">
-      <div className="months-header">
-        {months.map(month => (
-          <div key={month} className="month-label">{month}</div>
-        ))}
-      </div>
-      <div className="days-container">
-        <div className="day-labels">
-          <div>Mon</div>
-          <div>Wed</div>
-          <div>Fri</div>
+  const renderMonthLabels = (monthsToRender: string[]) => (
+    <div className="flex mb-2 p">
+      {monthsToRender.map((month, index) => (
+        <div 
+          key={month} 
+          className="month-label !text-left p-1 rounded-md"
+          style={{
+            backgroundColor: index % 2 === 1 ? 'rgba(255, 255, 255, 0.05)' : 'transparent'
+          }}
+        >
+          {month}
         </div>
-        <div className="weeks-container">
-          {weeks.map((week, weekIndex) => (
-            <div key={weekIndex} className="week">
-              {week.map(day => (
+      ))}
+    </div>
+  );
+
+  const renderWeeksRow = (startMonth: number, endMonth: number) => {
+    // Filter weeks that have at least one day in the current month range
+    const rowWeeks = weeks.filter(week => 
+      week.some(day => day.month >= startMonth && day.month <= endMonth)
+    );
+
+    return (
+      <div className="flex flex-row gap-1 w-full">
+        {rowWeeks.map((week, weekIndex) => (
+          <div 
+            key={weekIndex} 
+            className="week flex flex-col gap-1" 
+            style={{
+              flexGrow: 1,
+              padding: '1px'
+            }}
+          >
+            {week.map(day => {
+              // Only render days that belong to the current row's month range
+              if (day.month < startMonth || day.month > endMonth) {
+                return null;
+              }
+
+              const colorStyle = getColorStyle(day.quantity, day.isPredicted);
+              const monthStyle = {
+                backgroundColor: day.month % 2 === 1 && !day.quantity && !day.isPredicted 
+                  ? 'rgba(255, 255, 255, 0.05)' 
+                  : colorStyle.backgroundColor
+              };
+              
+              return (
                 <div
                   key={day.date}
-                  className="day"
-                  style={getColorStyle(day.quantity, day.isPredicted)}
+                  className="border w-full min-w-full aspect-square rounded border-white/10"
+                  style={{
+                    ...colorStyle,
+                    ...monthStyle
+                  }}
                   title={`${day.date}: ${day.quantity} ${day.quantity === 1 ? 'purchase' : 'purchases'}`}
                 />
-              ))}
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        {renderMonthLabels(topMonths)}
+        {renderWeeksRow(0, 5)}
+      </div>
+      <div>
+        {renderMonthLabels(bottomMonths)}
+        {renderWeeksRow(6, 11)}
       </div>
     </div>
   );
