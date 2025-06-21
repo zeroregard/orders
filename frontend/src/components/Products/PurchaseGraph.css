@@ -1,0 +1,75 @@
+.purchase-graph {
+  width: 100%;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.months-header {
+  display: flex;
+  margin-left: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.month-label {
+  width: calc(100% / 12);
+  text-align: center;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.days-container {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.day-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.weeks-container {
+  display: flex;
+  gap: 2px;
+  flex-grow: 1;
+}
+
+.week {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.day {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.day:hover {
+  transform: scale(1.2);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .purchase-graph {
+    padding: 0.5rem;
+  }
+
+  .month-label {
+    font-size: 0.7rem;
+  }
+
+  .day-labels {
+    font-size: 0.7rem;
+  }
+
+  .day {
+    width: 8px;
+    height: 8px;
+  }
+} 

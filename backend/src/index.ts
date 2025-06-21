@@ -120,6 +120,14 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
+// Apply auth middleware to all routes except /health and /auth
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/health') || req.path.startsWith('/auth')) {
+    return next();
+  }
+  return verifyGoogleToken(req, res, next);
+});
+
 // Use the routes index
 app.use('/api', router);
 

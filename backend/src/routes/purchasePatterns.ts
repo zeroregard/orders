@@ -1,14 +1,10 @@
 import { Router } from 'express';
-import { verifyGoogleToken } from '../middleware/auth';
 import { createPurchasePatternSchema, updatePurchasePatternSchema } from '../schemas/purchasePatternSchema';
 import { purchasePatternService } from '../services/purchasePatternService';
 import { prisma } from '../services/database';
 import { Prisma } from '@prisma/client';
 
 const router = Router();
-
-// Apply auth middleware to all routes
-router.use(verifyGoogleToken);
 
 /**
  * @swagger

@@ -50,6 +50,18 @@ export async function getPrediction(productId: string): Promise<PredictionRespon
   return apiClient.get<PredictionResponse>(`/predictions/${productId}`);
 }
 
+export interface PurchaseHistory {
+  max: number;
+  purchases: Array<{
+    date: string;
+    quantity: number;
+  }>;
+}
+
+export async function getPurchaseHistory(productId: string): Promise<PurchaseHistory> {
+  return apiClient.get<PurchaseHistory>(`/products/${productId}/purchase-history`);
+}
+
 // Export types for convenience
 export type { 
   Product, 

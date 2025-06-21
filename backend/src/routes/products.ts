@@ -276,4 +276,174 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/products/{id}/purchase-history:
+ *   get:
+ *     summary: Get purchase history for a product
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID
+ *     responses:
+ *       200:
+ *         description: Purchase history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 max:
+ *                   type: number
+ *                   description: Maximum quantity purchased on any single date
+ *                 purchases:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       date:
+ *                         type: string
+ *                         format: date
+ *                       quantity:
+ *                         type: number
+ *       404:
+ *         description: Product not found
+ */
+router.get('/:id/purchase-history', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // First check if product exists
+    const product = await prisma.product.findUnique({
+      where: { id }
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Get all orders containing this product
+    const orders = await prisma.orderLineItem.findMany({
+      where: {
+        productId: id
+      },
+      include: {
+        order: true
+      }
+    });
+
+    // Group purchases by date and sum quantities
+    const purchasesByDate = orders.reduce((acc, item) => {
+      const date = item.order.purchaseDate.toISOString().split('T')[0];
+      acc[date] = (acc[date] || 0) + item.quantity;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Convert to array format and find max
+    const purchases = Object.entries(purchasesByDate).map(([date, quantity]) => ({
+      date,
+      quantity
+    }));
+
+    const max = Math.max(...Object.values(purchasesByDate), 0);
+
+    res.json({
+      max,
+      purchases
+    });
+  } catch (error) {
+    console.error('Error fetching purchase history:', error);
+    res.status(500).json({ error: 'Failed to fetch purchase history' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/products/{id}/purchase-history:
+ *   get:
+ *     summary: Get purchase history for a product
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product ID
+ *     responses:
+ *       200:
+ *         description: Purchase history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 max:
+ *                   type: number
+ *                   description: Maximum quantity purchased on any single date
+ *                 purchases:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       date:
+ *                         type: string
+ *                         format: date
+ *                       quantity:
+ *                         type: number
+ *       404:
+ *         description: Product not found
+ */
+router.get('/:id/purchase-history', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // First check if product exists
+    const product = await prisma.product.findUnique({
+      where: { id }
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Get all orders containing this product
+    const orders = await prisma.orderLineItem.findMany({
+      where: {
+        productId: id
+      },
+      include: {
+        order: true
+      }
+    });
+
+    // Group purchases by date and sum quantities
+    const purchasesByDate = orders.reduce((acc, item) => {
+      const date = item.order.purchaseDate.toISOString().split('T')[0];
+      acc[date] = (acc[date] || 0) + item.quantity;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Convert to array format and find max
+    const purchases = Object.entries(purchasesByDate).map(([date, quantity]) => ({
+      date,
+      quantity
+    }));
+
+    const max = Math.max(...Object.values(purchasesByDate), 0);
+
+    res.json({
+      max,
+      purchases
+    });
+  } catch (error) {
+    console.error('Error fetching purchase history:', error);
+    res.status(500).json({ error: 'Failed to fetch purchase history' });
+  }
+});
+
 export default router;
