@@ -2,6 +2,12 @@ import { Router } from 'express';
 import { prisma } from '../services/database';
 import { orderSchema } from '../schemas/orderSchema';
 import { pushNotificationService } from '../services/pushNotificationService';
+import { purchasePatternService } from '../services/purchasePatternService';
+import { Order, OrderLineItem, Product } from '@prisma/client';
+
+interface OrderWithLineItems extends Order {
+  lineItems: (OrderLineItem & { product: Product })[];
+}
 
 const router = Router();
 
@@ -199,39 +205,85 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Create order with line items
-    const order = await prisma.order.create({
-      data: {
-        name,
-        creationDate: new Date(creationDate),
-        purchaseDate: new Date(purchaseDate),
-        lineItems: {
-          create: processedLineItems
-        }
-      },
-      include: {
-        lineItems: {
-          include: {
-            product: true
-          }
-        }
-      }
-    });
+    // Create order with line items using raw SQL to handle userId
+    const order = await prisma.$queryRaw<OrderWithLineItems[]>`
+      WITH new_order AS (
+        INSERT INTO orders (id, name, creation_date, purchase_date, user_id, created_at, updated_at)
+        VALUES (gen_random_uuid(), ${name}, ${new Date(creationDate)}, ${new Date(purchaseDate)}, ${req.user!.sub}, NOW(), NOW())
+        RETURNING *
+      ),
+      new_line_items AS (
+        INSERT INTO order_line_items (id, order_id, product_id, quantity, product_name, created_at)
+        SELECT 
+          gen_random_uuid(),
+          (SELECT id FROM new_order),
+          item.product_id,
+          item.quantity::integer,
+          item.product_name,
+          NOW()
+        FROM json_array_elements(${JSON.stringify(processedLineItems)}::json) AS item
+        RETURNING *
+      )
+      SELECT 
+        o.*,
+        json_agg(
+          json_build_object(
+            'id', li.id,
+            'orderId', li.order_id,
+            'productId', li.product_id,
+            'quantity', li.quantity,
+            'productName', li.product_name,
+            'createdAt', li.created_at,
+            'product', json_build_object(
+              'id', p.id,
+              'name', p.name,
+              'description', p.description,
+              'price', p.price,
+              'iconId', p.icon_id,
+              'createdAt', p.created_at,
+              'updatedAt', p.updated_at
+            )
+          )
+        ) as "lineItems"
+      FROM new_order o
+      LEFT JOIN new_line_items li ON true
+      LEFT JOIN products p ON li.product_id = p.id
+      GROUP BY o.id
+    `;
+    
+    if (!order || order.length === 0) {
+      throw new Error('Failed to create order');
+    }
+
+    const createdOrder = order[0];
     
     // Send push notification to all subscribers
     try {
       await pushNotificationService.sendNewOrderNotification({
-        id: order.id,
-        name: order.name,
-        itemCount: order.lineItems.length,
+        id: createdOrder.id,
+        name: createdOrder.name,
+        itemCount: createdOrder.lineItems.length,
       });
-      console.log(`📱 Push notification sent for new order: ${order.name}`);
+      console.log(`📱 Push notification sent for new order: ${createdOrder.name}`);
     } catch (notificationError) {
       // Don't fail the order creation if notifications fail
       console.error('❌ Failed to send push notification for new order:', notificationError);
     }
+
+    // Try to create purchase patterns for each product in the order
+    try {
+      for (const item of createdOrder.lineItems) {
+        await purchasePatternService.createPatternFromOrders({
+          userId: req.user!.sub,
+          productId: item.productId
+        });
+      }
+    } catch (patternError) {
+      // Don't fail the order creation if pattern creation fails
+      console.error('❌ Failed to create purchase patterns:', patternError);
+    }
     
-    res.status(201).json(order);
+    res.status(201).json(createdOrder);
   } catch (error) {
     console.error('Error creating order:', error);
     res.status(500).json({ error: 'Failed to create order' });
