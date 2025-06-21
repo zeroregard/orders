@@ -62,9 +62,6 @@ backend/
 
 See `/api/docs` for full OpenAPI documentation.
 
-## CI/CD
-- All pushes/PRs run lint, typecheck, and tests via GitHub Actions.
-
 ## Database Configuration
 
 ### Development (Local)
@@ -91,10 +88,12 @@ Railway will automatically set:
 - `PORT` (Railway assigns this)
 
 ### 3. Database Migrations
-Migrations are automatically run during deployment via the CI/CD pipeline:
-```bash
-railway run npx prisma migrate deploy
-```
+Migrations are not handled automatically yet, this needs to be done soon.
+
+## Definition of Done for an endpoint
+1. Is able to return 200.
+2. Will show the full error in case of 5** and any 4** that is not 401.
+3. Has associated schema available with description
 
 ## Verification Steps
 

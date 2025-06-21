@@ -4,6 +4,7 @@ import { orderSchema } from '../schemas/orderSchema';
 import { pushNotificationService } from '../services/pushNotificationService';
 import { purchasePatternService } from '../services/purchasePatternService';
 import { Order, OrderLineItem, Product } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 interface OrderWithLineItems extends Order {
   lineItems: (OrderLineItem & { product: Product })[];
@@ -168,125 +169,141 @@ router.get('/', async (_req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
+    console.log('Received order creation request:', JSON.stringify(req.body, null, 2));
+    
     const parseResult = orderSchema.safeParse(req.body);
     if (!parseResult.success) {
-      return res.status(400).json({ error: 'Invalid order data', details: parseResult.error.errors });
+      console.log('Validation failed:', parseResult.error.errors);
+      return res.status(400).json({ 
+        error: 'Invalid order data', 
+        details: parseResult.error.errors.map(err => ({
+          path: err.path.join('.'),
+          message: err.message
+        }))
+      });
     }
     
     const { name, creationDate, purchaseDate, lineItems } = parseResult.data;
+    console.log('Parsed data:', { name, creationDate, purchaseDate, lineItems });
     
-    // Process line items and create products on-the-fly if needed
-    const processedLineItems = [];
-    for (const item of lineItems) {
-      let productId = item.productId;
-      
-      // Create product on-the-fly if productName is provided but no productId
-      if (!productId && item.productName) {
-        const newProduct = await prisma.product.create({
-          data: { name: item.productName }
-        });
-        productId = newProduct.id;
-      }
-      
-      // Verify product exists
-      if (!productId) {
-        return res.status(400).json({ error: 'Product ID or productName is required for each line item' });
-      }
-      
-      const product = await prisma.product.findUnique({ where: { id: productId } });
-      if (!product) {
-        return res.status(400).json({ error: `Product with id ${productId} not found` });
-      }
-      
-      processedLineItems.push({
-        productId,
-        quantity: item.quantity,
-        productName: item.productName || product.name
-      });
-    }
-    
-    // Create order with line items using raw SQL to handle userId
-    const order = await prisma.$queryRaw<OrderWithLineItems[]>`
-      WITH new_order AS (
-        INSERT INTO orders (id, name, creation_date, purchase_date, user_id, created_at, updated_at)
-        VALUES (gen_random_uuid(), ${name}, ${new Date(creationDate)}, ${new Date(purchaseDate)}, ${req.user!.sub}, NOW(), NOW())
-        RETURNING *
-      ),
-      new_line_items AS (
-        INSERT INTO order_line_items (id, order_id, product_id, quantity, product_name, created_at)
-        SELECT 
-          gen_random_uuid(),
-          (SELECT id FROM new_order),
-          item.product_id,
-          item.quantity::integer,
-          item.product_name,
-          NOW()
-        FROM json_array_elements(${JSON.stringify(processedLineItems)}::json) AS item
-        RETURNING *
-      )
-      SELECT 
-        o.*,
-        json_agg(
-          json_build_object(
-            'id', li.id,
-            'orderId', li.order_id,
-            'productId', li.product_id,
-            'quantity', li.quantity,
-            'productName', li.product_name,
-            'createdAt', li.created_at,
-            'product', json_build_object(
-              'id', p.id,
-              'name', p.name,
-              'description', p.description,
-              'price', p.price,
-              'iconId', p.icon_id,
-              'createdAt', p.created_at,
-              'updatedAt', p.updated_at
-            )
-          )
-        ) as "lineItems"
-      FROM new_order o
-      LEFT JOIN new_line_items li ON true
-      LEFT JOIN products p ON li.product_id = p.id
-      GROUP BY o.id
-    `;
-    
-    if (!order || order.length === 0) {
-      throw new Error('Failed to create order');
-    }
-
-    const createdOrder = order[0];
-    
-    // Send push notification to all subscribers
+    // Use a transaction for the entire order creation process
     try {
-      await pushNotificationService.sendNewOrderNotification({
-        id: createdOrder.id,
-        name: createdOrder.name,
-        itemCount: createdOrder.lineItems.length,
-      });
-      console.log(`📱 Push notification sent for new order: ${createdOrder.name}`);
-    } catch (notificationError) {
-      // Don't fail the order creation if notifications fail
-      console.error('❌ Failed to send push notification for new order:', notificationError);
-    }
-
-    // Try to create purchase patterns for each product in the order
-    try {
-      for (const item of createdOrder.lineItems) {
-        await purchasePatternService.createPatternFromOrders({
-          userId: req.user!.sub,
-          productId: item.productId
+      const result = await prisma.$transaction(async (tx) => {
+        // Process line items and create products on-the-fly if needed
+        const processedLineItems = [];
+        for (const item of lineItems) {
+          let productId = item.productId;
+          
+          // Create product on-the-fly if productName is provided but no productId
+          if (!productId && item.productName) {
+            const newProduct = await tx.product.create({
+              data: { name: item.productName }
+            });
+            productId = newProduct.id;
+          }
+          
+          // Verify product exists
+          if (!productId) {
+            throw new Error('Product ID or productName is required for each line item');
+          }
+          
+          console.log('Verifying product exists:', productId);
+          const product = await tx.product.findUnique({ where: { id: productId } });
+          if (!product) {
+            throw new Error(`Product with id ${productId} not found`);
+          }
+          
+          processedLineItems.push({
+            productId,
+            quantity: item.quantity
+          });
+        }
+        
+        console.log('Processed line items:', processedLineItems);
+        
+        // Create the order with line items
+        console.log('Creating order with data:', {
+          name,
+          creationDate: new Date(creationDate),
+          purchaseDate: new Date(purchaseDate),
+          lineItems: processedLineItems
         });
-      }
-    } catch (patternError) {
-      // Don't fail the order creation if pattern creation fails
-      console.error('❌ Failed to create purchase patterns:', patternError);
+        
+        try {
+          const order = await tx.order.create({
+            data: {
+              name,
+              creationDate: new Date(creationDate),
+              purchaseDate: new Date(purchaseDate),
+              lineItems: {
+                create: processedLineItems
+              }
+            },
+            include: {
+              lineItems: {
+                include: {
+                  product: true
+                }
+              }
+            }
+          });
+          console.log('Order created in transaction:', order);
+          return order;
+        } catch (createError) {
+          console.error('Error in create operation:', createError);
+          throw createError;
+        }
+      });
+
+      console.log('Order created successfully:', result);
+      res.status(201).json(result);
+    } catch (txError) {
+      console.error('Transaction error:', txError);
+      throw txError;
     }
-    
-    res.status(201).json(createdOrder);
   } catch (error) {
-    console.error('Error creating order:', error);
-    res.status(500).json({ error: 'Failed to create order' });
+    console.error('Error processing order:', {
+      error,
+      name: error instanceof Error ? error.name : undefined,
+      message: error instanceof Error ? error.message : undefined,
+      stack: error instanceof Error ? error.stack : undefined,
+      code: error instanceof Prisma.PrismaClientKnownRequestError ? error.code : undefined,
+      meta: error instanceof Prisma.PrismaClientKnownRequestError ? error.meta : undefined
+    });
+    
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error('Prisma error code:', error.code);
+      console.error('Prisma error meta:', error.meta);
+      
+      if (error.code === 'P2002') {
+        return res.status(400).json({ error: 'Unique constraint violation', details: error.meta });
+      } else if (error.code === 'P2003') {
+        return res.status(400).json({ error: 'Foreign key constraint violation', details: error.meta });
+      }
+      
+      return res.status(400).json({ 
+        error: 'Database error', 
+        code: error.code,
+        details: error.meta 
+      });
+    }
+    
+    // Handle custom errors thrown in the transaction
+    if (error instanceof Error) {
+      return res.status(400).json({ 
+        error: error.message,
+        details: {
+          name: error.name,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }
+      });
+    }
+    
+    // Handle unknown errors
+    res.status(500).json({ 
+      error: 'Failed to create order',
+      details: 'An unexpected error occurred'
+    });
   }
 });
 
