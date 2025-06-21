@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getProducts } from '../api/backend';
+import { getProducts } from '../../../api/backend';
 
 interface Product {
   id: string;

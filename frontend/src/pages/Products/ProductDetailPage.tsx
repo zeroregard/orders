@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getProducts, getPrediction } from '../api/backend';
-import type { Product, PredictionResponse } from '../types/backendSchemas';
+import { getProducts, getPrediction } from '../../api/backend';
+import type { Product, PredictionResponse } from '../../types/backendSchemas';
 import './ProductDetailPage.css';
 
 export const ProductDetailPage: React.FC = () => {

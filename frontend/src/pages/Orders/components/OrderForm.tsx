@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, Plus, Trash2, ShoppingCart, Calendar, Package } from 'lucide-react';
-import { getProducts, createOrder } from '../api/backend';
-import type { Product } from '../types/backendSchemas';
+import { getProducts, createOrder } from '../../../api/backend';
+import type { Product } from '../../../types/backendSchemas';
 import './OrderForm.css';
 
 interface OrderFormProps {

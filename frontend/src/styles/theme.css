@@ -1,5 +1,6 @@
 /* Modern Dark Mode Theme for Auto-Order App */
 :root {
+  width: 100%;
   /* Dark theme colors */
   --background: #121212;
   --surface: #1e1e1e;

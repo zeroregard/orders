@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Package } from 'lucide-react';
-import { createProduct } from '../api/backend';
-import type { CreateProductRequest } from '../types/backendSchemas';
+import { createProduct } from '../../../api/backend';
+import type { CreateProductRequest } from '../../../types/backendSchemas';
 
 interface ProductFormProps {
   onCreated?: () => void;

@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, Trash2, Calendar, ShoppingCart, Package } from 'lucide-react';
-import { getOrders, deleteOrder } from '../api/backend';
-import type { Order } from '../types/backendSchemas';
-import { OrderForm } from './OrderForm';
+import { getOrders, deleteOrder } from '../../api/backend';
+import type { Order } from '../../types/backendSchemas';
+import { OrderForm } from './components/OrderForm';
 
 export function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -89,33 +89,37 @@ export function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="orders-page">
-        <div className="loading">Loading orders...</div>
+      <div className="min-h-screen bg-gray-900 p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-white text-lg">Loading orders...</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="orders-page">
-        <div className="error">{error}</div>
+      <div className="min-h-screen bg-gray-900 p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-red-400 text-lg">{error}</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="orders-page">
+    <div className="min-h-screen bg-gray-900 p-6">
       <motion.div
-        className="page-header"
+        className="mb-8"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="header-content">
-          <h1>Orders</h1>
-          <div className="header-actions">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-white">Orders</h1>
+          <div className="flex gap-4">
             <motion.button
-              className="add-button"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 hover:from-purple-700 hover:to-pink-700 transition-colors"
               onClick={() => setShowForm(true)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -128,27 +132,27 @@ export function OrdersPage() {
       </motion.div>
 
       <motion.div
-        className="filters-section"
+        className="mb-8 flex flex-col sm:flex-row gap-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        <div className="search-container">
-          <Search size={20} className="search-icon" />
+        <div className="relative flex-1">
+          <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Search orders..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
+            className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
         </div>
 
-        <div className="sort-container">
+        <div className="flex gap-2">
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'name' | 'createdAt' | 'purchaseDate')}
-            className="sort-select"
+            className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
             <option value="createdAt">Sort by Creation Date</option>
             <option value="purchaseDate">Sort by Purchase Date</option>
@@ -156,7 +160,7 @@ export function OrdersPage() {
           </select>
           <button
             onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="sort-order-button"
+            className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
           >
             {sortOrder === 'asc' ? '↑' : '↓'}
           </button>
@@ -164,7 +168,7 @@ export function OrdersPage() {
       </motion.div>
 
       <motion.div
-        className="orders-grid"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
         layout
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -174,7 +178,7 @@ export function OrdersPage() {
           {filteredAndSortedOrders.map((order) => (
             <motion.div
               key={order.id}
-              className="order-card"
+              className="bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-purple-500 transition-colors"
               layout
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -182,16 +186,19 @@ export function OrdersPage() {
               transition={{ duration: 0.2 }}
               whileHover={{ y: -4, boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)' }}
             >
-              <div className="card-header">
-                <div className="order-title">
-                  <ShoppingCart size={20} className="title-icon" />
-                  <Link to={`/orders/${order.id}`} className="order-name">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                  <ShoppingCart size={20} className="text-purple-400" />
+                  <Link 
+                    to={`/orders/${order.id}`} 
+                    className="text-xl font-semibold text-white hover:text-purple-400 transition-colors"
+                  >
                     {order.name}
                   </Link>
                 </div>
-                <div className="card-actions">
+                <div className="flex gap-2">
                   <motion.button
-                    className="action-button delete"
+                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
                     onClick={() => handleDelete(order.id)}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
@@ -201,62 +208,59 @@ export function OrdersPage() {
                 </div>
               </div>
 
-              <div className="order-meta">
-                <div className="meta-row">
-                  <div className="meta-item">
-                    <Calendar size={16} />
-                    <span className="meta-label">Created:</span>
-                    <span className="meta-value">
-                      {new Date(order.createdAt || order.creationDate).toLocaleDateString()}
-                    </span>
-                  </div>
+              <div className="space-y-3 mb-4">
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Calendar size={16} />
+                  <span className="text-sm">Created:</span>
+                  <span className="text-sm text-white">
+                    {new Date(order.createdAt || order.creationDate).toLocaleDateString()}
+                  </span>
                 </div>
                 
-                <div className="meta-row">
-                  <div className="meta-item">
-                    <Calendar size={16} />
-                    <span className="meta-label">Purchase:</span>
-                    <span className="meta-value">
-                      {new Date(order.purchaseDate).toLocaleDateString()}
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Calendar size={16} />
+                  <span className="text-sm">Purchase:</span>
+                  <span className="text-sm text-white">
+                    {new Date(order.purchaseDate).toLocaleDateString()}
+                  </span>
                 </div>
 
-                <div className="meta-row">
-                  <div className="meta-item">
-                    <Package size={16} />
-                    <span className="meta-label">Items:</span>
-                    <span className="meta-value">
-                      {getTotalItems(order)} items ({order.lineItems.length} products)
-                    </span>
-                  </div>
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Package size={16} />
+                  <span className="text-sm">Items:</span>
+                  <span className="text-sm text-white">
+                    {getTotalItems(order)} items ({order.lineItems.length} products)
+                  </span>
                 </div>
               </div>
 
               {order.lineItems.length > 0 && (
-                <div className="line-items">
-                  <h4>Line Items</h4>
-                  <div className="line-items-list">
+                <div className="border-t border-gray-700 pt-4">
+                  <h4 className="text-sm font-medium text-gray-300 mb-3">Line Items</h4>
+                  <div className="space-y-2">
                     {order.lineItems.slice(0, 3).map((item, index) => (
                       <motion.div
                         key={`${item.productId}-${index}`}
-                        className="line-item"
+                        className="flex justify-between items-center text-sm"
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.2, delay: index * 0.05 }}
                       >
                         <Link 
                           to={`/products/${item.productId}`}
-                          className="item-name item-link"
+                          className="text-purple-400 hover:text-purple-300 transition-colors flex-1 truncate"
                         >
                           {item.productName || `Product ${item.productId}`}
                         </Link>
-                        <span className="item-quantity">×{item.quantity}</span>
+                        <span className="text-gray-400 ml-2">×{item.quantity}</span>
                       </motion.div>
                     ))}
                     {order.lineItems.length > 3 && (
-                      <div className="line-item more-items">
-                        <Link to={`/orders/${order.id}`} className="view-more-link">
+                      <div className="text-sm">
+                        <Link 
+                          to={`/orders/${order.id}`} 
+                          className="text-purple-400 hover:text-purple-300 transition-colors"
+                        >
                           +{order.lineItems.length - 3} more items
                         </Link>
                       </div>
@@ -271,14 +275,17 @@ export function OrdersPage() {
 
       {filteredAndSortedOrders.length === 0 && !loading && (
         <motion.div
-          className="empty-state"
+          className="text-center py-12"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <p>No orders found.</p>
+          <p className="text-gray-400 text-lg mb-4">No orders found.</p>
           {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="clear-search">
+            <button 
+              onClick={() => setSearchQuery('')} 
+              className="text-purple-400 hover:text-purple-300 underline transition-colors"
+            >
               Clear search
             </button>
           )}
@@ -288,14 +295,14 @@ export function OrdersPage() {
       <AnimatePresence>
         {showForm && (
           <motion.div
-            className="modal-overlay"
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowForm(false)}
           >
             <motion.div
-              className="modal-content"
+              className="bg-gray-800 rounded-xl p-6 w-full max-w-md max-h-screen overflow-y-auto"
               initial={{ opacity: 0, scale: 0.8, y: 50 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 50 }}

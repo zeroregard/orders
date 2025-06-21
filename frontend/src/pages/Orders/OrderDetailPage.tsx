@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Calendar, ShoppingCart, Package, ExternalLink, AlertCircle } from 'lucide-react';
-import { getOrders } from '../api/backend';
-import type { Order } from '../types/backendSchemas';
+import { getOrders } from '../../api/backend';
+import type { Order } from '../../types/backendSchemas';
 import './OrderDetailPage.css';
 
 export function OrderDetailPage() {

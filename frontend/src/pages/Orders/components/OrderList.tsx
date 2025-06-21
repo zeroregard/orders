@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getOrders } from '../api/backend';
+import { getOrders } from '../../../api/backend';
 
 interface OrderLineItem {
   productId: string;

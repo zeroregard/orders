@@ -1,7 +1,7 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { GoogleSignInButton } from './GoogleSignInButton';
-import type { AuthenticationError, AuthorizationError } from '../utils/apiClient';
+import type { AuthenticationError, AuthorizationError } from '../../utils/apiClient';
 import './AuthError.css';
 
 interface AuthErrorProps {

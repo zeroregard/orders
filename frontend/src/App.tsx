@@ -1,11 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Navigation } from './components/Navigation';
-import { ProductsPage } from './components/ProductsPage';
-import { OrdersPage } from './components/OrdersPage';
-import { ProductDetailPage } from './components/ProductDetailPage';
-import { OrderDetailPage } from './components/OrderDetailPage';
+import { Navigation, GoogleSignInButton } from './components';
+import { ProductsPage, ProductDetailPage, OrdersPage, OrderDetailPage } from './pages';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { GoogleSignInButton } from './components/GoogleSignInButton';
 import { apiClient } from './utils/apiClient';
 import { useEffect } from 'react';
 import './App.css';
