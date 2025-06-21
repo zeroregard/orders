@@ -11,6 +11,8 @@
     "env:pull": "vercel env pull .env"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.80.10",
+    "@tanstack/react-query-devtools": "^5.80.10",
     "@types/google.accounts": "^0.0.17",
     "@types/react-router-dom": "^5.3.3",
     "framer-motion": "^12.18.1",

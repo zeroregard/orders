@@ -1,35 +1,12 @@
-import { useEffect, useState } from 'react';
-import { getProducts } from '../api/backend';
-
-interface Product {
-  id: string;
-  name: string;
-  description?: string;
-  price?: number;
-}
+import { useProducts } from '../hooks/useApi';
 
 export function ProductList() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: products = [], isLoading, error } = useProducts();
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const data = await getProducts();
-        setProducts(data);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to fetch products');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  if (loading) return <div>Loading products...</div>;
-  if (error) return <div className="error">{error}</div>;
+  if (isLoading) return <div>Loading products...</div>;
+  if (error) return <div className="error">
+    {error instanceof Error ? error.message : 'Failed to fetch products'}
+  </div>;
 
   return (
     <div className="product-list">

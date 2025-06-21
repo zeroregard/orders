@@ -102,83 +102,48 @@ const STORAGE_KEYS = {
 const storage = {
   setAuthData: (token: string, user: User, expiresAt: number) => {
     try {
-      console.log('🔐 SAVING auth data to localStorage:', {
-        userEmail: user.email,
-        expiresAt: new Date(expiresAt * 1000).toISOString(),
-        timeUntilExpiry: Math.round((expiresAt * 1000 - Date.now()) / (1000 * 60)) + ' minutes'
-      });
       localStorage.setItem(STORAGE_KEYS.TOKEN, token);
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, expiresAt.toString());
-      console.log('✅ Auth data saved successfully');
     } catch (error) {
-      console.warn('❌ Failed to save auth data to localStorage:', error);
+      console.warn('Failed to save auth data to localStorage:', error);
     }
   },
   
   getAuthData: (): { token: string; user: User; expiresAt: number } | null => {
     try {
-      console.log('🔍 LOADING auth data from localStorage...');
       const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
       const userStr = localStorage.getItem(STORAGE_KEYS.USER);
       const expiresAtStr = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
       
-      console.log('📋 Raw localStorage data:', {
-        hasToken: !!token,
-        hasUser: !!userStr, 
-        hasExpiresAt: !!expiresAtStr,
-        tokenLength: token?.length,
-        expiresAtValue: expiresAtStr
-      });
-      
       if (!token || !userStr || !expiresAtStr) {
-        console.log('❌ Missing auth data in localStorage');
         return null;
       }
       
       const user = JSON.parse(userStr) as User;
       const expiresAt = parseInt(expiresAtStr, 10);
       
-      console.log('✅ Successfully loaded auth data:', {
-        userEmail: user.email,
-        expiresAt: new Date(expiresAt * 1000).toISOString(),
-        timeUntilExpiry: Math.round((expiresAt * 1000 - Date.now()) / (1000 * 60)) + ' minutes'
-      });
-      
       return { token, user, expiresAt };
     } catch (error) {
-      console.warn('❌ Failed to load auth data from localStorage:', error);
+      console.warn('Failed to load auth data from localStorage:', error);
       return null;
     }
   },
   
   clearAuthData: () => {
     try {
-      console.log('🗑️ CLEARING auth data from localStorage');
-      console.trace('Stack trace for clearAuthData call:');
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
       localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
-      console.log('✅ Auth data cleared successfully');
     } catch (error) {
-      console.warn('❌ Failed to clear auth data from localStorage:', error);
+      console.warn('Failed to clear auth data from localStorage:', error);
     }
   },
   
   isTokenValid: (expiresAt: number): boolean => {
     // Add 5 minutes buffer before actual expiration
     const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
-    const isValid = Date.now() < (expiresAt * 1000 - bufferTime);
-    const timeUntilExpiry = Math.round((expiresAt * 1000 - Date.now()) / (1000 * 60));
-    
-    console.log('⏱️ Token validation:', {
-      isValid,
-      expiresAt: new Date(expiresAt * 1000).toISOString(),
-      timeUntilExpiry: timeUntilExpiry + ' minutes',
-      currentTime: new Date().toISOString()
-    });
-    
-    return isValid;
+    return Date.now() < (expiresAt * 1000 - bufferTime);
   },
 };
 
@@ -194,11 +159,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Restore authentication state from localStorage on app load
   useEffect(() => {
     const restoreAuthState = () => {
-      console.log('🚀 STARTING authentication state restoration...');
-      
       const storedAuthData = storage.getAuthData();
       if (!storedAuthData) {
-        console.log('❌ No stored auth data found, user needs to sign in');
         setIsLoading(false);
         return;
       }
@@ -207,14 +169,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Check if token is still valid
       if (!storage.isTokenValid(expiresAt)) {
-        console.log('⏰ Stored token has expired, clearing auth data');
         storage.clearAuthData();
         setIsLoading(false);
         return;
       }
       
       // Restore auth state
-      console.log('✅ Restoring valid auth session for user:', storedUser.email);
       setToken(storedToken);
       setUser(storedUser);
       setIsLoading(false);
@@ -227,7 +187,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const initializeGoogleAuth = () => {
       if (window.google) {
-        console.log('🟢 Initializing Google Identity Services...');
         try {
           window.google.accounts.id.initialize({
             client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your-google-client-id',
@@ -236,9 +195,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             cancel_on_tap_outside: true,
           });
           setGoogleReady(true);
-          console.log('✅ Google Identity Services ready');
         } catch (error) {
-          console.error('❌ Failed to initialize Google Identity Services:', error);
+          console.error('Failed to initialize Google Identity Services:', error);
           setGoogleReady(false);
         }
       }
@@ -246,22 +204,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Load Google Identity Services script
     if (!window.google) {
-      console.log('📥 Loading Google Identity Services script...');
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
-      script.onload = () => {
-        console.log('📦 Google Identity Services script loaded');
-        initializeGoogleAuth();
-      };
+      script.onload = initializeGoogleAuth;
       script.onerror = () => {
-        console.error('❌ Failed to load Google Identity Services script');
+        console.error('Failed to load Google Identity Services script');
         setGoogleReady(false);
       };
       document.head.appendChild(script);
     } else {
-      console.log('🔄 Google Identity Services already available');
       initializeGoogleAuth();
     }
   }, []);
@@ -307,7 +260,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Persist to localStorage with expiration time
       if (payload.exp) {
         storage.setAuthData(credential, userData, payload.exp);
-        console.log('Auth session saved. Token expires at:', new Date(payload.exp * 1000).toISOString());
       }
     } catch (error) {
       console.error('Sign-in error:', error);

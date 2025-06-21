@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { X, Package } from 'lucide-react';
-import { createProduct } from '../api/backend';
-import type { CreateProductRequest } from '../types/backendSchemas';
+import { useCreateProduct } from '../hooks/useApi';
 
 interface ProductFormProps {
   onCreated?: () => void;
@@ -13,22 +11,18 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const createProductMutation = useCreateProduct();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
     
     try {
-      const productData: CreateProductRequest = {
+      await createProductMutation.mutateAsync({
         name,
         description: description || undefined,
         price: price ? parseFloat(price) : undefined,
-      };
-      
-      await createProduct(productData);
+      });
       
       // Reset form
       setName('');
@@ -37,9 +31,8 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
       
       if (onCreated) onCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create product');
-    } finally {
-      setLoading(false);
+      // Error is handled by React Query and available via createProductMutation.error
+      console.error('Failed to create product:', err);
     }
   };
 
@@ -50,27 +43,20 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
   };
 
   return (
-    <motion.div
-      className="product-form"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
+    <div className="product-form">
       <div className="form-header">
         <div className="form-title">
           <Package size={24} />
           <h3>Add New Product</h3>
         </div>
         {onCancel && (
-          <motion.button
+          <button
             type="button"
             className="close-button"
             onClick={handleCancel}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
           >
             <X size={20} />
-          </motion.button>
+          </button>
         )}
       </div>
 
@@ -117,40 +103,35 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
           </div>
         </div>
 
-        {error && (
-          <motion.div
-            className="error-message"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            {error}
-          </motion.div>
+        {createProductMutation.error && (
+          <div className="error-message">
+            {createProductMutation.error instanceof Error 
+              ? createProductMutation.error.message 
+              : 'Failed to create product'
+            }
+          </div>
         )}
 
         <div className="form-actions">
           {onCancel && (
-            <motion.button
+            <button
               type="button"
               className="cancel-button"
               onClick={handleCancel}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+              disabled={createProductMutation.isPending}
             >
               Cancel
-            </motion.button>
+            </button>
           )}
-          <motion.button
+          <button
             type="submit"
-            disabled={loading || !name.trim()}
+            disabled={createProductMutation.isPending || !name.trim()}
             className="submit-button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
           >
-            {loading ? 'Creating...' : 'Create Product'}
-          </motion.button>
+            {createProductMutation.isPending ? 'Creating...' : 'Create Product'}
+          </button>
         </div>
       </form>
-    </motion.div>
+    </div>
   );
 }

@@ -1,41 +1,12 @@
-import { useEffect, useState } from 'react';
-import { getOrders } from '../api/backend';
-
-interface OrderLineItem {
-  productId: string;
-  quantity: number;
-}
-
-interface Order {
-  id: string;
-  name: string;
-  creationDate: string;
-  purchaseDate: string;
-  lineItems: OrderLineItem[];
-}
+import { useOrders } from '../hooks/useApi';
 
 export function OrderList() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: orders = [], isLoading, error } = useOrders();
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const data = await getOrders();
-        setOrders(data);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to fetch orders');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, []);
-
-  if (loading) return <div>Loading orders...</div>;
-  if (error) return <div className="error">{error}</div>;
+  if (isLoading) return <div>Loading orders...</div>;
+  if (error) return <div className="error">
+    {error instanceof Error ? error.message : 'Failed to fetch orders'}
+  </div>;
 
   return (
     <div className="order-list">

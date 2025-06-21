@@ -258,6 +258,43 @@
   margin-bottom: 1rem;
 }
 
+.product-name-link {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+.product-name-link:hover {
+  color: #a855f7;
+}
+
+.product-footer {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.view-details-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(139, 92, 246, 0.2);
+  color: #a855f7;
+  text-decoration: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.view-details-btn:hover {
+  background: rgba(139, 92, 246, 0.3);
+  color: white;
+  transform: translateY(-1px);
+}
+
 .product-meta {
   display: flex;
   align-items: center;

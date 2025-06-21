@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Navigation } from './components/Navigation';
 import { ProductsPage } from './components/ProductsPage';
 import { OrdersPage } from './components/OrdersPage';
@@ -10,16 +12,45 @@ import { apiClient } from './utils/apiClient';
 import { useEffect } from 'react';
 import './App.css';
 
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      retry: (failureCount, error: unknown) => {
+        // Don't retry on auth errors
+        if (error && typeof error === 'object' && 'status' in error) {
+          const statusError = error as { status: number };
+          if (statusError.status === 401 || statusError.status === 403) {
+            return false;
+          }
+        }
+        return failureCount < 3;
+      },
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
+
 // Component to initialize API client with auth
 const AppInitializer = () => {
-  const { token, signOut } = useAuth();
+  const { token, signOut, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    console.log('🔧 Configuring apiClient with token:', token ? 'present' : 'missing');
     // Configure API client with token getter and auth error handler
     apiClient.setTokenGetter(() => token);
     apiClient.setAuthErrorHandler(() => signOut());
   }, [token, signOut]);
+
+  // Invalidate all queries when user signs in to refetch fresh data
+  useEffect(() => {
+    if (isAuthenticated) {
+      queryClient.invalidateQueries();
+    }
+  }, [isAuthenticated]);
 
   return null;
 };
@@ -57,14 +88,17 @@ const AuthStatus = () => {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="app dark-mode">
-          <AppInitializer />
-          <AppContent />
-        </div>
-      </Router>
-    </AuthProvider>
-  );
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <div className="app dark-mode">
+            <AppInitializer />
+            <AppContent />
+                      </div>
+          </Router>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+      </AuthProvider>
+    );
 }
 
 // Separate component to handle loading state
