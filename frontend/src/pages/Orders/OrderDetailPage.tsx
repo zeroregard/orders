@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Calendar, ShoppingCart, Package, ExternalLink, AlertCircle, Edit2 } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Calendar, ShoppingCart, Package } from 'lucide-react';
 import { getOrders } from '../../api/backend';
 import type { Order } from '../../types/backendSchemas';
 import { EditOrderForm } from './components/EditOrderForm';
-import { SkeletonCard } from '../../components';
-import './OrderDetailPage.css';
+import { DetailPageLayout, DetailCard, SkeletonCard } from '../../components';
 
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,250 +54,97 @@ export function OrderDetailPage() {
   };
 
   if (loading) {
+    return <SkeletonCard />;
+  }
+
+  if (error || !order) {
     return (
-      <div className="order-detail-page">
-        <motion.div
-          className="page-header"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="w-32 h-8 bg-white/5 rounded-lg animate-pulse" />
-        </motion.div>
-
-        <motion.div
-          className="order-detail-content"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-        >
-          <div className="order-info-card">
-            <SkeletonCard variant="detail" />
-          </div>
-
-          <motion.div
-            className="line-items-card"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <div className="line-items-header">
-              <div className="w-1/3 h-8 bg-white/5 rounded-lg animate-pulse" />
-            </div>
-
-            <div className="line-items-content">
-              <div className="line-items-list">
-                <SkeletonCard variant="list" count={3} />
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      </div>
+      <DetailCard className="p-8">
+        <p className="text-red-500">{error || 'Order not found'}</p>
+      </DetailCard>
     );
   }
 
-  if (error) {
-    return (
-      <div className="order-detail-page">
-        <div className="error">
-          <AlertCircle size={48} />
-          <h2>Error</h2>
-          <p>{error}</p>
-          <button onClick={() => navigate('/orders')} className="back-button">
-            Back to Orders
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!order) {
-    return (
-      <div className="order-detail-page">
-        <div className="error">
-          <AlertCircle size={48} />
-          <h2>Order Not Found</h2>
-          <p>The order you're looking for doesn't exist.</p>
-          <button onClick={() => navigate('/orders')} className="back-button">
-            Back to Orders
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (isEditing) {
-    return (
-      <div className="order-detail-page">
-        <motion.div
-          className="page-header"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Link to="/orders" className="back-link">
-            <ArrowLeft size={20} />
-            Back to Orders
-          </Link>
-        </motion.div>
-
+  return (
+    <DetailPageLayout
+      title={order.name}
+      backTo="/orders"
+      isEditing={isEditing}
+      onEditToggle={() => setIsEditing(!isEditing)}
+    >
+      {isEditing ? (
         <EditOrderForm
           order={order}
           onUpdated={handleOrderUpdated}
           onCancel={() => setIsEditing(false)}
         />
-      </div>
-    );
-  }
-
-  return (
-    <div className="order-detail-page">
-      <motion.div
-        className="page-header"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <Link to="/orders" className="back-link">
-          <ArrowLeft size={20} />
-          Back to Orders
-        </Link>
-      </motion.div>
-
-      <motion.div
-        className="order-detail-content"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-      >
-        <div className="order-info-card">
-          <div className="order-header">
-            <div className="order-title">
-              <ShoppingCart size={32} />
-              <div>
-                <h1>{order.name}</h1>
-                <p className="order-subtitle">Order Details</p>
+      ) : (
+        <>
+          <DetailCard
+            icon={ShoppingCart}
+            className="mb-8"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex items-center gap-3">
+                <Calendar size={20} className="text-violet-400" />
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Created</p>
+                  <p className="text-lg text-white">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Calendar size={20} className="text-violet-400" />
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Purchase Date</p>
+                  <p className="text-lg text-white">
+                    {new Date(order.purchaseDate).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Package size={20} className="text-violet-400" />
+                <div>
+                  <p className="text-sm text-gray-400 mb-1">Total Items</p>
+                  <p className="text-lg text-white">{getTotalItems(order)}</p>
+                </div>
               </div>
             </div>
-            <button
-              onClick={() => setIsEditing(true)}
-              className="edit-button"
-            >
-              <Edit2 size={20} />
-              Edit Order
-            </button>
-          </div>
+          </DetailCard>
 
-          <div className="order-meta-grid">
-            <div className="meta-card">
-              <div className="meta-icon">
-                <Calendar size={24} />
-              </div>
-              <div className="meta-content">
-                <span className="meta-label">Created</span>
-                <span className="meta-value">
-                  {new Date(order.createdAt || order.creationDate).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </span>
-              </div>
-            </div>
-
-            <div className="meta-card">
-              <div className="meta-icon">
-                <Calendar size={24} />
-              </div>
-              <div className="meta-content">
-                <span className="meta-label">Purchase Date</span>
-                <span className="meta-value">
-                  {new Date(order.purchaseDate).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </span>
-              </div>
-            </div>
-
-            <div className="meta-card">
-              <div className="meta-icon">
-                <Package size={24} />
-              </div>
-              <div className="meta-content">
-                <span className="meta-label">Total Items</span>
-                <span className="meta-value">
-                  {getTotalItems(order)} items ({order.lineItems.length} products)
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <motion.div
-          className="line-items-card"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          <div className="line-items-header">
-            <div className="line-items-icon">
-              <Package size={28} />
-            </div>
-            <div>
-              <h2>Line Items</h2>
-              <p>{order.lineItems.length} products in this order</p>
-            </div>
-          </div>
-
-          <div className="line-items-content">
-            {order.lineItems.length > 0 ? (
-              <div className="line-items-list">
-                {order.lineItems.map((item, index) => (
-                  <motion.div
-                    key={`${item.productId}-${index}`}
-                    className="line-item-card"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    <div className="line-item-info">
-                      <div className="line-item-header">
-                        <h3 className="item-name">
-                          {item.product?.name || item.productName || `Product ${item.productId}`}
-                        </h3>
-                        <div className="item-quantity">
-                          <Package size={16} />
-                          <span>×{item.quantity}</span>
-                        </div>
-                      </div>
-                      <div className="item-id">
-                        Product ID: {item.productId}
-                      </div>
+          <DetailCard
+            title="Order Items"
+            icon={Package}
+          >
+            <div className="space-y-4">
+              {order.lineItems.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 bg-white/5 rounded-lg"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 flex items-center justify-center bg-violet-500/20 text-violet-400 rounded-lg">
+                      <Package size={20} />
                     </div>
-                    <div className="line-item-actions">
-                      <Link 
-                        to={`/products/${item.productId}`}
-                        className="view-product-link"
-                      >
-                        <ExternalLink size={16} />
-                        View Product
-                      </Link>
+                    <div>
+                      <p className="text-white font-medium">
+                        {item.product?.name || `Product ${item.productId}`}
+                      </p>
+                      <p className="text-sm text-gray-400">Quantity: {item.quantity}</p>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-line-items">
-                <Package size={48} />
-                <p>No line items found</p>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      </motion.div>
-    </div>
+                  </div>
+                  {item.product?.price && (
+                    <p className="text-lg font-semibold text-violet-400">
+                      €{(item.product.price * item.quantity).toFixed(2)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </DetailCard>
+        </>
+      )}
+    </DetailPageLayout>
   );
 } 

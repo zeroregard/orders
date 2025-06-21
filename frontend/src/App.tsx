@@ -122,7 +122,7 @@ const AppContent = () => {
           <AuthStatus />
         </div>
       </header>
-      <main className="flex p-0 overflow-x-hidden overflow-y-auto grow shrink">
+      <main className="flex p-0 overflow-x-hidden overflow-y-auto grow shrink mb-8">
         <Routes>
           {/* Landing page - not protected */}
           <Route path="/" element={<ProductsPage />} />

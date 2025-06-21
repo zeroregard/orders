@@ -9,8 +9,6 @@ interface ProductFormProps {
   onCancel?: () => void;
 }
 
-// Get all icon names from Lucide
-const iconNames = Object.keys(icons).sort();
 
 export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
   const [name, setName] = useState('');
