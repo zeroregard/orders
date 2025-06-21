@@ -103,20 +103,22 @@ export function ProductDetailPage() {
       ) : (
         <>
           <DetailCard className="mb-8">
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-4">
               <div className="w-12 h-12 flex items-center justify-center bg-violet-500/20 text-violet-400 rounded-lg">
                 {React.createElement(ProductIcon, { size: 24 })}
               </div>
               <div>
-                <p className="text-lg text-gray-300">{product.description}</p>
+                {product.description && (
+                  <p className="text-base text-gray-300 mb-1">{product.description}</p>
+                )}
                 {product.price !== undefined && (
-                  <p className="text-2xl text-violet-400 font-bold">
+                  <p className="text-lg text-violet-400 font-medium">
                     €{product.price.toFixed(2)}
                   </p>
                 )}
               </div>
             </div>
-            <div className="flex flex-col md:flex-row gap-2 md:gap-8 text-sm text-gray-400">
+            <div className="flex flex-col md:flex-row gap-2 md:gap-8 text-sm text-gray-400 mt-4">
               <p>Created: {new Date(product.createdAt).toLocaleDateString()}</p>
               <p>Last Updated: {new Date(product.updatedAt).toLocaleDateString()}</p>
             </div>

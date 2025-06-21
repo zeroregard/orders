@@ -84,30 +84,30 @@ export function OrderDetailPage() {
             icon={ShoppingCart}
             className="mb-8"
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center gap-3">
-                <Calendar size={20} className="text-violet-400" />
+                <Calendar size={16} className="text-violet-400" />
                 <div>
-                  <p className="text-sm text-gray-400 mb-1">Created</p>
-                  <p className="text-lg text-white">
+                  <p className="text-sm text-gray-400">Created</p>
+                  <p className="text-base text-white">
                     {new Date(order.createdAt).toLocaleDateString()}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Calendar size={20} className="text-violet-400" />
+                <Calendar size={16} className="text-violet-400" />
                 <div>
-                  <p className="text-sm text-gray-400 mb-1">Purchase Date</p>
-                  <p className="text-lg text-white">
+                  <p className="text-sm text-gray-400">Purchase Date</p>
+                  <p className="text-base text-white">
                     {new Date(order.purchaseDate).toLocaleDateString()}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Package size={20} className="text-violet-400" />
+                <Package size={16} className="text-violet-400" />
                 <div>
-                  <p className="text-sm text-gray-400 mb-1">Total Items</p>
-                  <p className="text-lg text-white">{getTotalItems(order)}</p>
+                  <p className="text-sm text-gray-400">Total Items</p>
+                  <p className="text-base text-white">{getTotalItems(order)}</p>
                 </div>
               </div>
             </div>
@@ -117,25 +117,25 @@ export function OrderDetailPage() {
             title="Order Items"
             icon={Package}
           >
-            <div className="space-y-4">
+            <div className="space-y-3">
               {order.lineItems.map((item, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-4 bg-white/5 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 flex items-center justify-center bg-violet-500/20 text-violet-400 rounded-lg">
-                      <Package size={20} />
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 flex items-center justify-center bg-violet-500/20 text-violet-400 rounded-lg">
+                      <Package size={16} />
                     </div>
                     <div>
-                      <p className="text-white font-medium">
+                      <p className="text-base text-white font-medium">
                         {item.product?.name || `Product ${item.productId}`}
                       </p>
                       <p className="text-sm text-gray-400">Quantity: {item.quantity}</p>
                     </div>
                   </div>
                   {item.product?.price && (
-                    <p className="text-lg font-semibold text-violet-400">
+                    <p className="text-base text-violet-400 font-medium">
                       €{(item.product.price * item.quantity).toFixed(2)}
                     </p>
                   )}

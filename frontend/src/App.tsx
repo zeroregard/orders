@@ -1,10 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Navigation, GoogleSignInButton, ProtectedRoute } from './components';
+import { Navigation, GoogleSignInButton } from './components';
 import { ProductsPage, ProductDetailPage, OrdersPage, OrderDetailPage } from './pages';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { apiClient } from './utils/apiClient';
 import { useEffect } from 'react';
 import './App.css';
+import { ProtectedRoute } from './components/Auth/ProtectedRoute';
 
 // Component to initialize API client with auth
 const AppInitializer = () => {
