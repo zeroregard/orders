@@ -52,7 +52,7 @@
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .form-group label {
@@ -117,9 +117,9 @@
 }
 
 .line-items-header label {
-  margin-bottom: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  font-size: 0.875rem;
 }
 
 .add-line-item-button {
@@ -127,36 +127,31 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: rgba(139, 92, 246, 0.2);
-  color: #a855f7;
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  border-radius: 8px;
-  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
 }
 
-.add-line-item-button:hover:not(:disabled) {
-  background: rgba(139, 92, 246, 0.3);
+.add-line-item-button:hover {
+  background: rgba(255, 255, 255, 0.15);
   color: white;
-}
-
-.add-line-item-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .empty-line-items {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
-  padding: 2rem;
-  border: 2px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  text-align: center;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .empty-line-items svg {
@@ -173,25 +168,18 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #8b5cf6, #a855f7);
-  color: white;
-  border: none;
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.8);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
 }
 
-.add-first-item-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
-}
-
-.add-first-item-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+.add-first-item-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
 .line-items-list {
@@ -200,24 +188,34 @@
   gap: 1rem;
 }
 
-.line-item-form {
+.line-item {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 1rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  transition: all 0.2s ease;
-}
-
-.line-item-form:hover {
+  padding: 1.5rem;
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
 }
 
-.line-item-content {
-  flex: 1;
+.remove-line-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.remove-line-item:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: rgba(239, 68, 68, 0.9);
 }
 
 .form-row {
@@ -238,31 +236,6 @@
 
 .quantity-col {
   flex: 0 0 120px;
-}
-
-.remove-line-item-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.remove-line-item-button:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.3);
-  color: white;
-}
-
-.remove-line-item-button:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
 }
 
 .no-products-message {
@@ -371,13 +344,13 @@
     flex: 1;
   }
 
-  .line-item-form {
+  .line-item {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
   }
 
-  .remove-line-item-button {
+  .remove-line-item {
     align-self: flex-end;
     width: auto;
     padding: 0.5rem 1rem;
@@ -406,7 +379,7 @@
     font-size: 1.1rem;
   }
 
-  .line-item-form {
+  .line-item {
     padding: 0.75rem;
   }
 

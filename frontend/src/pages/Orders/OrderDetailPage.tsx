@@ -195,7 +195,7 @@ export function OrderDetailPage() {
                     <div className="line-item-info">
                       <div className="line-item-header">
                         <h3 className="item-name">
-                          {item.productName || `Product ${item.productId}`}
+                          {item.product?.name || item.productName || `Product ${item.productId}`}
                         </h3>
                         <div className="item-quantity">
                           <Package size={16} />

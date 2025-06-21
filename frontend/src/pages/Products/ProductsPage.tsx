@@ -86,7 +86,7 @@ export function ProductsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 p-6">
+      <div className="page">
         <div className="flex items-center justify-center h-64">
           <div className="text-white text-lg">Loading products...</div>
         </div>
@@ -96,7 +96,7 @@ export function ProductsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 p-6">
+      <div className="page">
         <div className="flex items-center justify-center h-64">
           <div className="text-red-400 text-lg">{error}</div>
         </div>
@@ -105,7 +105,7 @@ export function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
+    <div className="page">
       <motion.div
         className="mb-8"
         initial={{ opacity: 0, y: -20 }}
@@ -215,7 +215,7 @@ export function ProductsPage() {
               )}
 
               <div className="flex flex-col gap-2">
-                {product.price !== undefined && (
+                {product.price != null && (
                   <div className="flex items-center gap-2 text-green-400">
                     <DollarSign size={16} />
                     <span className="font-medium">${product.price.toFixed(2)}</span>

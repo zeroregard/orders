@@ -67,7 +67,7 @@ function App() {
     <AuthProvider>
       <Router>
         <div 
-          className="min-h-screen flex flex-col text-white dark-mode"
+          className="min-h-screen flex flex-col text-white dark-mode h-svh"
           style={{
             background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
             fontFamily: "'Inter', system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif"
@@ -109,9 +109,9 @@ const AppContent = () => {
   }
 
   return (
-    <>
+    <div className="flex flex-col h-svh">
       <header 
-        className="sticky top-0 z-50 py-4 border-b border-white/10 p-4"
+        className="w-full shrink-0 py-4 border-b border-white/10 p-4"
         style={{
           background: 'rgba(15, 15, 35, 0.95)',
           backdropFilter: 'blur(12px)'
@@ -122,7 +122,7 @@ const AppContent = () => {
           <AuthStatus />
         </div>
       </header>
-      <main className="flex-1 p-0 overflow-x-hidden">
+      <main className="flex p-0 overflow-x-hidden overflow-y-auto grow shrink">
         <Routes>
           <Route path="/" element={<ProductsPage />} />
           <Route path="/products" element={<ProductsPage />} />
@@ -131,15 +131,7 @@ const AppContent = () => {
           <Route path="/orders/:id" element={<OrderDetailPage />} />
         </Routes>
       </main>
-      <footer 
-        className="py-4 text-center mt-auto border-t border-white/10"
-        style={{
-          background: 'rgba(15, 15, 35, 0.8)'
-        }}
-      >
-        <p className="m-0 text-white/60 text-sm">Auto-Order System &copy; {new Date().getFullYear()}</p>
-      </footer>
-    </>
+    </div>
   );
 };
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { X, Plus, Trash2, ShoppingCart, Calendar, Package } from 'lucide-react';
 import { getProducts, createOrder } from '../../../api/backend';
 import type { Product } from '../../../types/backendSchemas';
+import { ProductSelector } from '../../../components/Products/ProductSelector';
 import './OrderForm.css';
 
 interface OrderFormProps {
@@ -46,9 +47,8 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
   }, []);
 
   const addLineItem = () => {
-    if (products.length > 0) {
-      setLineItems([...lineItems, { productId: products[0].id, quantity: 1 }]);
-    }
+    // Always add a line item, even if there are no products
+    setLineItems([...lineItems, { productId: products[0]?.id || '', quantity: 1 }]);
   };
 
   const updateLineItem = (index: number, field: keyof LineItemForm, value: string | number) => {
@@ -100,7 +100,24 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
     if (onCancel) onCancel();
   };
 
-
+  const handleProductCreated = async () => {
+    try {
+      const productsData = await getProducts();
+      setProducts(productsData);
+      
+      // Update any empty product IDs with the first product
+      if (productsData.length > 0) {
+        setLineItems(items => 
+          items.map(item => ({
+            ...item,
+            productId: item.productId || productsData[0].id
+          }))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to fetch products:', err);
+    }
+  };
 
   return (
     <form className="w-full max-w-none" onSubmit={handleSubmit}>
@@ -176,7 +193,6 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
             type="button"
             className="add-line-item-button"
             onClick={addLineItem}
-            disabled={products.length === 0}
           >
             <Plus size={16} />
             Add Item
@@ -191,7 +207,6 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
               type="button"
               className="add-first-item-button"
               onClick={addLineItem}
-              disabled={products.length === 0}
             >
               <Plus size={16} />
               Add First Item
@@ -200,57 +215,33 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
         ) : (
           <div className="line-items-list">
             {lineItems.map((item, index) => (
-              <div key={index} className="line-item-form">
-                <div className="line-item-content">
-                  <div className="form-row">
-                    <div className="form-col">
-                      <label htmlFor={`product-${index}`}>Product</label>
-                      <select
-                        id={`product-${index}`}
-                        className="form-input"
-                        value={item.productId}
-                        onChange={(e) => updateLineItem(index, 'productId', e.target.value)}
-                        required
-                      >
-                        {products.map((product) => (
-                          <option key={product.id} value={product.id}>
-                            {product.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    
-                    <div className="form-col quantity-col">
-                      <label htmlFor={`quantity-${index}`}>Quantity</label>
-                      <input
-                        id={`quantity-${index}`}
-                        type="number"
-                        className="form-input"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => updateLineItem(index, 'quantity', parseInt(e.target.value) || 1)}
-                        required
-                      />
-                    </div>
-                  </div>
+              <div key={index} className="line-item">
+                <div className="flex-1">
+                  <ProductSelector
+                    products={products}
+                    selectedProductId={item.productId}
+                    onProductSelected={(productId) => updateLineItem(index, 'productId', productId)}
+                    onProductCreated={handleProductCreated}
+                  />
                 </div>
-                
+                <div className="quantity-input">
+                  <input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => updateLineItem(index, 'quantity', parseInt(e.target.value, 10))}
+                    className="w-24 py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10"
+                  />
+                </div>
                 <button
                   type="button"
-                  className="remove-line-item-button"
+                  className="remove-line-item"
                   onClick={() => removeLineItem(index)}
-                  disabled={lineItems.length === 1}
                 >
                   <Trash2 size={16} />
                 </button>
               </div>
             ))}
-          </div>
-        )}
-
-        {products.length === 0 && (
-          <div className="no-products-message">
-            <p>No products available. Please create some products first.</p>
           </div>
         )}
       </div>
@@ -261,21 +252,20 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
             type="button"
             className="py-3 px-6 bg-white/10 border border-white/20 rounded-lg text-white/80 font-medium cursor-pointer transition-all duration-200 min-w-30 hover:bg-white/15 hover:text-white"
             onClick={handleCancel}
-            disabled={loading}
           >
             Cancel
           </button>
         )}
         <button
           type="submit"
+          disabled={loading || !name.trim() || lineItems.length === 0}
           className="py-3 px-6 border-0 rounded-lg text-white font-semibold cursor-pointer transition-all duration-200 min-w-36 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
           style={{
             background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
             boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)'
           }}
-          disabled={loading || products.length === 0 || lineItems.length === 0}
         >
-          {loading ? 'Creating Order...' : 'Create Order'}
+          {loading ? 'Creating...' : 'Create Order'}
         </button>
       </div>
     </form>

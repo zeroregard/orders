@@ -89,7 +89,7 @@ export function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 p-6">
+      <div className="page">
         <div className="flex items-center justify-center h-64">
           <div className="text-white text-lg">Loading orders...</div>
         </div>
@@ -99,7 +99,7 @@ export function OrdersPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 p-6">
+      <div className="page">
         <div className="flex items-center justify-center h-64">
           <div className="text-red-400 text-lg">{error}</div>
         </div>
@@ -108,7 +108,7 @@ export function OrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
+    <div className="page">
       <motion.div
         className="mb-8"
         initial={{ opacity: 0, y: -20 }}
@@ -250,7 +250,7 @@ export function OrdersPage() {
                           to={`/products/${item.productId}`}
                           className="text-purple-400 hover:text-purple-300 transition-colors flex-1 truncate"
                         >
-                          {item.productName || `Product ${item.productId}`}
+                          {item.product?.name || item.productName || `Product ${item.productId}`}
                         </Link>
                         <span className="text-gray-400 ml-2">×{item.quantity}</span>
                       </motion.div>
@@ -295,7 +295,11 @@ export function OrdersPage() {
       <AnimatePresence>
         {showForm && (
           <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 flex items-center justify-center p-4 z-50"
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.30)',
+              backdropFilter: 'blur(3px)',
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
