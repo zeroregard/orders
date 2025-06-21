@@ -50,13 +50,67 @@ const router = Router();
  */
 router.get('/', async (_req, res) => {
   try {
+    console.log('Attempting to fetch products...');
+    
+    // Test database connection first
+    await prisma.$connect();
+    console.log('Database connection successful');
+    
     const products = await prisma.product.findMany({
       orderBy: { createdAt: 'desc' }
     });
+    
+    console.log(`Successfully fetched ${products.length} products`);
     res.json(products);
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    res.status(500).json({ error: 'Failed to fetch products' });
+  } catch (error: any) {
+    console.error('Detailed error fetching products:');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Full error:', error);
+    console.error('Stack trace:', error.stack);
+    
+    // Provide specific error messages based on error type
+    let errorMessage = 'Failed to fetch products';
+    let statusCode = 500;
+    
+    if (error.code === 'P1001') {
+      errorMessage = 'Database connection failed: Cannot reach the database server';
+      statusCode = 503;
+    } else if (error.code === 'P1003') {
+      errorMessage = 'Database connection failed: Database does not exist';
+      statusCode = 503;
+    } else if (error.code === 'P1008') {
+      errorMessage = 'Database connection failed: Operation timed out';
+      statusCode = 503;
+    } else if (error.code === 'P1017') {
+      errorMessage = 'Database connection failed: Server has closed the connection';
+      statusCode = 503;
+    } else if (error.message.includes('SQLITE_CANTOPEN')) {
+      errorMessage = 'Database connection failed: Cannot open SQLite database file. Check file permissions and path.';
+      statusCode = 503;
+    } else if (error.message.includes('does not exist')) {
+      errorMessage = 'Database schema error: Table does not exist. Please run database migrations.';
+      statusCode = 503;
+    } else if (error.message.includes('no such table')) {
+      errorMessage = 'Database schema error: Products table does not exist. Please run database migrations.';
+      statusCode = 503;
+    } else if (error.name === 'PrismaClientInitializationError') {
+      errorMessage = `Prisma client initialization failed: ${error.message}`;
+      statusCode = 503;
+    } else if (error.name === 'PrismaClientUnknownRequestError') {
+      errorMessage = `Database request error: ${error.message}`;
+      statusCode = 503;
+    }
+    
+    res.status(statusCode).json({ 
+      error: errorMessage,
+      details: {
+        errorName: error.name,
+        errorCode: error.code,
+        originalMessage: error.message
+      }
+    });
   }
 });
 

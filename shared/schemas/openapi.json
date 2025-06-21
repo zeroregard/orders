@@ -1,0 +1,670 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Auto-Order API",
+    "version": "1.0.0",
+    "description": "API documentation for Auto-Order backend - Personal Purchase Tracker with CRUD operations for Products and Orders, plus purchase prediction capabilities."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001",
+      "description": "Development server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Google ID Token as Bearer token"
+      }
+    },
+    "schemas": {
+      "Product": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the product"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the product"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description of the product"
+          },
+          "price": {
+            "type": "number",
+            "description": "Optional price of the product"
+          }
+        },
+        "example": {
+          "id": "123e4567-e89b-12d3-a456-426614174000",
+          "name": "Coffee Beans",
+          "description": "Premium Arabica coffee beans",
+          "price": 15.99
+        }
+      },
+      "OrderLineItem": {
+        "type": "object",
+        "required": [
+          "productId",
+          "quantity"
+        ],
+        "properties": {
+          "productId": {
+            "type": "string",
+            "description": "ID of the product"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity of the product"
+          },
+          "productName": {
+            "type": "string",
+            "description": "Optional name of the product (for on-the-fly creation)"
+          }
+        },
+        "example": {
+          "productId": "123e4567-e89b-12d3-a456-426614174000",
+          "quantity": 2,
+          "productName": "Coffee Beans"
+        }
+      },
+      "Order": {
+        "type": "object",
+        "required": [
+          "name",
+          "creationDate",
+          "purchaseDate",
+          "lineItems"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the order"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the order"
+          },
+          "creationDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when the order was created (ISO format)"
+          },
+          "purchaseDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Date when the order was/will be purchased (ISO format)"
+          },
+          "lineItems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLineItem"
+            },
+            "description": "List of items in the order"
+          }
+        },
+        "example": {
+          "id": "456e7890-e89b-12d3-a456-426614174001",
+          "name": "Weekly Grocery Order",
+          "creationDate": "2025-06-19",
+          "purchaseDate": "2025-06-20",
+          "lineItems": [
+            {
+              "productId": "123e4567-e89b-12d3-a456-426614174000",
+              "quantity": 2,
+              "productName": "Coffee Beans"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/products": {
+      "get": {
+        "summary": "Get all products",
+        "tags": [
+          "Products"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all products",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Product"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new product",
+        "tags": [
+          "Products"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "number"
+                  }
+                },
+                "example": {
+                  "name": "Coffee Beans",
+                  "description": "Premium Arabica coffee beans",
+                  "price": 15.99
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid product data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "put": {
+        "summary": "Update a product",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Product ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "number"
+                  }
+                },
+                "example": {
+                  "name": "Updated Coffee Beans",
+                  "description": "Updated premium Arabica coffee beans",
+                  "price": 18.99
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Product updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a product",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Product ID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Product deleted successfully"
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "summary": "Get all orders",
+        "tags": [
+          "Orders"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Order"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new order",
+        "tags": [
+          "Orders"
+        ],
+        "description": "Create a new order. If a product doesn't exist in lineItems and productName is provided, it will be created automatically.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "creationDate",
+                  "purchaseDate",
+                  "lineItems"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "creationDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "purchaseDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "lineItems": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/OrderLineItem"
+                    }
+                  }
+                },
+                "example": {
+                  "name": "Weekly Grocery Order",
+                  "creationDate": "2025-06-19",
+                  "purchaseDate": "2025-06-20",
+                  "lineItems": [
+                    {
+                      "productId": "123e4567-e89b-12d3-a456-426614174000",
+                      "quantity": 2
+                    },
+                    {
+                      "productName": "New Product",
+                      "quantity": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid order data or product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "details": {
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{id}": {
+      "put": {
+        "summary": "Update an order",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "creationDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "purchaseDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "lineItems": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/OrderLineItem"
+                    }
+                  }
+                },
+                "example": {
+                  "name": "Updated Weekly Grocery Order",
+                  "creationDate": "2025-06-19",
+                  "purchaseDate": "2025-06-21",
+                  "lineItems": [
+                    {
+                      "productId": "123e4567-e89b-12d3-a456-426614174000",
+                      "quantity": 3
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete an order",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order ID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Order deleted successfully"
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        }
+      }
+    },
+    "/api/predictions/{productId}": {
+      "get": {
+        "summary": "Predict next purchase date for a product",
+        "tags": [
+          "Predictions"
+        ],
+        "description": "Analyzes past orders to predict when a product will likely be purchased again. Requires at least 2 previous orders containing the product.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "productId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Product ID to predict next purchase for",
+            "example": "123e4567-e89b-12d3-a456-426614174000"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Prediction calculated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "productId": {
+                      "type": "string",
+                      "description": "The product ID"
+                    },
+                    "predictedNextPurchaseDate": {
+                      "type": "string",
+                      "format": "date",
+                      "description": "Predicted date for next purchase (YYYY-MM-DD format)"
+                    }
+                  },
+                  "example": {
+                    "productId": "123e4567-e89b-12d3-a456-426614174000",
+                    "predictedNextPurchaseDate": "2025-07-15"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not enough data to make a prediction (requires at least 2 orders)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "example": {
+                    "error": "Not enough data to predict next purchase"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/protected-test": {
+      "get": {
+        "summary": "Protected test endpoint for manual frontend testing",
+        "tags": [
+          "Auth"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Test endpoint to verify authentication is working",
+        "responses": {
+          "200": {
+            "description": "Authentication successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Authentication successful"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "email": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "picture": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - valid token but unauthorized email"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "summary": "Health check endpoint",
+        "tags": [
+          "Health"
+        ],
+        "description": "Check if the API server is running and healthy",
+        "responses": {
+          "200": {
+            "description": "Server is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Server is running"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}

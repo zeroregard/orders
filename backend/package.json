@@ -8,6 +8,7 @@
     "dev": "node -r ts-node/register src/index.ts",
     "watch": "nodemon --exec node -r ts-node/register src/index.ts",
     "build": "tsc",
+    "prebuild": "pnpm generate:schemas",
     "test": "jest",
     "test:unit": "jest --testPathPatterns=unit",
     "test:e2e": "jest --testPathPatterns=e2e",
@@ -16,7 +17,8 @@
     "db:reset": "prisma migrate reset",
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
-    "db:seed": "ts-node prisma/seed.ts"
+    "db:seed": "ts-node prisma/seed.ts",
+    "generate:schemas": "ts-node scripts/generate-openapi.ts"
   },
   "keywords": [],
   "author": "",
@@ -24,8 +26,11 @@
   "packageManager": "pnpm@10.12.1",
   "dependencies": {
     "@prisma/client": "^6.10.1",
+    "@types/jsonwebtoken": "^9.0.10",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "google-auth-library": "^10.1.0",
+    "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.1",
     "prisma": "^6.10.1",
     "swagger-jsdoc": "^6.2.8",

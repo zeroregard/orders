@@ -17,11 +17,27 @@ const options = {
         description: 'Development server',
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'Google ID Token as Bearer token'
+        }
+      }
+    },
+    security: [
+      {
+        bearerAuth: []
+      }
+    ]
   },
   apis: [
     path.join(__dirname, 'routes/products.ts'),
     path.join(__dirname, 'routes/orders.ts'),
     path.join(__dirname, 'routes/predictions.ts'),
+    path.join(__dirname, 'routes/auth.ts'),
     path.join(__dirname, 'index.ts')
   ], // Path to the API docs
 };
@@ -41,3 +57,6 @@ export function setupSwagger(app: Express) {
   
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 }
+
+// Export the spec for generating static files
+export { swaggerSpec };
