@@ -59,3 +59,4 @@ logs
 
 # TypeScript cache
 *.tsbuildinfo
+**/nul
