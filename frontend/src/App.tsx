@@ -79,12 +79,10 @@ const AppContent = () => {
 
   return (
     <>
-      <header className="app-header">
-        <div className="header-content">
-          <div className="header-nav flex justify-between w-full">
-            <Navigation />
-            <AuthStatus />
-          </div>
+      <header className="app-header p-4">
+        <div className="flex items-center gap-2 justify-between w-full">
+          <Navigation />
+          <AuthStatus />
         </div>
       </header>
       <main className="app-content">
