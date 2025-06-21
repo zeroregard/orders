@@ -11,7 +11,6 @@ const AppInitializer = () => {
   const { token, signOut } = useAuth();
 
   useEffect(() => {
-    console.log('🔧 Configuring apiClient with token:', token ? 'present' : 'missing');
     // Configure API client with token getter and auth error handler
     apiClient.setTokenGetter(() => token);
     apiClient.setAuthErrorHandler(() => signOut());
@@ -35,16 +34,15 @@ const AuthStatus = () => {
 
   if (isAuthenticated && user) {
     return (
-      <div className="auth-status authenticated">
+      <div className="auth-status">
         <img src={user.picture} alt={user.name} className="user-avatar" />
-        <span className="user-name">{user.name}</span>
         <button onClick={signOut} className="sign-out-btn">Sign Out</button>
       </div>
     );
   }
 
   return (
-    <div className="auth-status unauthenticated">
+    <div className="auth-status">
       <GoogleSignInButton size="medium" />
     </div>
   );
@@ -83,8 +81,7 @@ const AppContent = () => {
     <>
       <header className="app-header">
         <div className="header-content">
-          <h1>Auto-Order System</h1>
-          <div className="header-nav">
+          <div className="header-nav flex justify-between w-full">
             <Navigation />
             <AuthStatus />
           </div>

@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "env:pull": "vercel env pull .env"
+    "env:pull": "vercel env pull .env",
+    "env:pull:prod": "vercel env pull .env --environment production"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.80.10",
