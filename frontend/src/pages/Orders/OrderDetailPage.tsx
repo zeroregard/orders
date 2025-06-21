@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Calendar, ShoppingCart, Package, ExternalLink, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, ShoppingCart, Package, ExternalLink, AlertCircle, Edit2 } from 'lucide-react';
 import { getOrders } from '../../api/backend';
 import type { Order } from '../../types/backendSchemas';
+import { EditOrderForm } from './components/EditOrderForm';
 import './OrderDetailPage.css';
 
 export function OrderDetailPage() {
@@ -12,40 +13,46 @@ export function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      if (!id) {
-        setError('Order ID not provided');
+  const fetchOrder = async () => {
+    if (!id) {
+      setError('Order ID not provided');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const orders = await getOrders();
+      const foundOrder = orders.find(o => o.id === id) as Order;
+      
+      if (!foundOrder) {
+        setError('Order not found');
         setLoading(false);
         return;
       }
 
-      try {
-        setLoading(true);
-        const orders = await getOrders();
-        const foundOrder = orders.find(o => o.id === id) as Order;
-        
-        if (!foundOrder) {
-          setError('Order not found');
-          setLoading(false);
-          return;
-        }
+      setOrder(foundOrder);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch order');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setOrder(foundOrder);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch order');
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchOrder();
   }, [id]);
 
   const getTotalItems = (order: Order) => {
     return order.lineItems.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  const handleOrderUpdated = () => {
+    setIsEditing(false);
+    fetchOrder();
   };
 
   if (loading) {
@@ -86,6 +93,30 @@ export function OrderDetailPage() {
     );
   }
 
+  if (isEditing) {
+    return (
+      <div className="order-detail-page">
+        <motion.div
+          className="page-header"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Link to="/orders" className="back-link">
+            <ArrowLeft size={20} />
+            Back to Orders
+          </Link>
+        </motion.div>
+
+        <EditOrderForm
+          order={order}
+          onUpdated={handleOrderUpdated}
+          onCancel={() => setIsEditing(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="order-detail-page">
       <motion.div
@@ -115,6 +146,13 @@ export function OrderDetailPage() {
                 <p className="order-subtitle">Order Details</p>
               </div>
             </div>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="edit-button"
+            >
+              <Edit2 size={20} />
+              Edit Order
+            </button>
           </div>
 
           <div className="order-meta-grid">

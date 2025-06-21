@@ -40,6 +40,9 @@
 
 .order-header {
   margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
 .order-title {
@@ -312,6 +315,31 @@
 .back-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+}
+
+.edit-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(139, 92, 246, 0.2);
+  color: #a855f7;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-button:hover {
+  background: rgba(139, 92, 246, 0.3);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.edit-button:active {
+  transform: translateY(0);
 }
 
 /* Responsive Design */

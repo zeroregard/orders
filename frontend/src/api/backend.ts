@@ -37,6 +37,10 @@ export async function createOrder(order: CreateOrderRequest): Promise<Order> {
   return apiClient.post<Order>('/orders', order);
 }
 
+export async function updateOrder(id: string, order: Partial<CreateOrderRequest>): Promise<Order> {
+  return apiClient.put<Order>(`/orders/${id}`, order);
+}
+
 export async function deleteOrder(id: string): Promise<void> {
   return apiClient.delete<void>(`/orders/${id}`);
 }
