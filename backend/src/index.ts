@@ -4,6 +4,7 @@ import productsRouter from './routes/products';
 import ordersRouter from './routes/orders';
 import predictionsRouter from './routes/predictions';
 import authRouter from './routes/auth';
+import pushNotificationsRouter from './routes/pushNotifications';
 import { setupSwagger } from './swagger';
 import { verifyGoogleToken } from './middleware/auth';
 import { prisma } from './services/database';
@@ -127,6 +128,7 @@ app.use('/api/products', productsRouter);
 app.use('/api/orders', verifyGoogleToken, ordersRouter); // Protect orders (purchase functionality)
 app.use('/api/predictions', verifyGoogleToken, predictionsRouter); // Protect predictions
 app.use('/api/auth', authRouter);
+app.use('/api/push', pushNotificationsRouter); // Push notifications
 
 setupSwagger(app);
 

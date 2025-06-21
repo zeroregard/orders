@@ -58,3 +58,14 @@ model OrderLineItem {
   
   @@map("order_line_items")
 }
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  endpoint  String   @unique
+  p256dh    String   // public key
+  auth      String   // auth secret
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("push_subscriptions")
+}

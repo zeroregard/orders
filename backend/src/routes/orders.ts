@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../services/database';
 import { orderSchema } from '../schemas/orderSchema';
+import { pushNotificationService } from '../services/pushNotificationService';
 
 const router = Router();
 
@@ -216,6 +217,19 @@ router.post('/', async (req, res) => {
         }
       }
     });
+    
+    // Send push notification to all subscribers
+    try {
+      await pushNotificationService.sendNewOrderNotification({
+        id: order.id,
+        name: order.name,
+        itemCount: order.lineItems.length,
+      });
+      console.log(`📱 Push notification sent for new order: ${order.name}`);
+    } catch (notificationError) {
+      // Don't fail the order creation if notifications fail
+      console.error('❌ Failed to send push notification for new order:', notificationError);
+    }
     
     res.status(201).json(order);
   } catch (error) {
