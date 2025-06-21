@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Package } from 'lucide-react';
 import { createProduct } from '../api/backend';
-import type { Product } from '../types/backendSchemas';
+import type { CreateProductRequest } from '../types/backendSchemas';
 
 interface ProductFormProps {
   onCreated?: () => void;
@@ -22,7 +22,7 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
     setError(null);
     
     try {
-      const productData: Omit<Product, 'id'> = {
+      const productData: CreateProductRequest = {
         name,
         description: description || undefined,
         price: price ? parseFloat(price) : undefined,

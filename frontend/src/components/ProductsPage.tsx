@@ -7,14 +7,8 @@ import type { Product } from '../types/backendSchemas';
 import { ProductForm } from './ProductForm';
 import './ProductsPage.css';
 
-// Extended Product interface to handle database fields
-interface ExtendedProduct extends Product {
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export function ProductsPage() {
-  const [products, setProducts] = useState<ExtendedProduct[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,7 +20,7 @@ export function ProductsPage() {
     try {
       setLoading(true);
       const data = await getProducts();
-      setProducts(data as ExtendedProduct[]);
+      setProducts(data as Product[]);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch products');

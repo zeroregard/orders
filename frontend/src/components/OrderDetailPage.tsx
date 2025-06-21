@@ -6,16 +6,10 @@ import { getOrders } from '../api/backend';
 import type { Order } from '../types/backendSchemas';
 import './OrderDetailPage.css';
 
-// Extended Order interface to handle database fields
-interface ExtendedOrder extends Order {
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [order, setOrder] = useState<ExtendedOrder | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +24,7 @@ export function OrderDetailPage() {
       try {
         setLoading(true);
         const orders = await getOrders();
-        const foundOrder = orders.find(o => o.id === id) as ExtendedOrder;
+        const foundOrder = orders.find(o => o.id === id) as Order;
         
         if (!foundOrder) {
           setError('Order not found');
@@ -50,7 +44,7 @@ export function OrderDetailPage() {
     fetchOrder();
   }, [id]);
 
-  const getTotalItems = (order: ExtendedOrder) => {
+  const getTotalItems = (order: Order) => {
     return order.lineItems.reduce((total, item) => total + item.quantity, 0);
   };
 

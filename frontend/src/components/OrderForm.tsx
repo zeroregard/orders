@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X, Plus, Trash2, ShoppingCart, Calendar, Package } from 'lucide-react';
-import { getProducts } from '../api/backend';
+import { getProducts, createOrder } from '../api/backend';
 import type { Product } from '../types/backendSchemas';
 import './OrderForm.css';
 
@@ -75,21 +75,12 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
     setError(null);
 
     try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          creationDate,
-          purchaseDate,
-          lineItems,
-        }),
+      await createOrder({
+        name,
+        creationDate,
+        purchaseDate,
+        lineItems,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to create order');
-      }
 
       // Reset form
       setName('');

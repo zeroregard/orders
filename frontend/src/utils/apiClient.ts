@@ -14,16 +14,22 @@ export interface ApiError {
 }
 
 export class AuthenticationError extends Error {
-  constructor(message: string, public status: number) {
+  public status: number;
+  
+  constructor(message: string, status: number) {
     super(message);
     this.name = 'AuthenticationError';
+    this.status = status;
   }
 }
 
 export class AuthorizationError extends Error {
-  constructor(message: string, public status: number) {
+  public status: number;
+  
+  constructor(message: string, status: number) {
     super(message);
     this.name = 'AuthorizationError';
+    this.status = status;
   }
 }
 

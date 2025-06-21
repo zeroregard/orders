@@ -7,14 +7,8 @@ import type { Order } from '../types/backendSchemas';
 import { OrderForm } from './OrderForm';
 import './OrdersPage.css';
 
-// Extended Order interface to handle database fields
-interface ExtendedOrder extends Order {
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export function OrdersPage() {
-  const [orders, setOrders] = useState<ExtendedOrder[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,7 +20,7 @@ export function OrdersPage() {
     try {
       setLoading(true);
       const data = await getOrders();
-      setOrders(data as ExtendedOrder[]);
+      setOrders(data as Order[]);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch orders');
@@ -90,7 +84,7 @@ export function OrdersPage() {
     setShowForm(false);
   };
 
-  const getTotalItems = (order: ExtendedOrder) => {
+  const getTotalItems = (order: Order) => {
     return order.lineItems.reduce((total, item) => total + item.quantity, 0);
   };
 

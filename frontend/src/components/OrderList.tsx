@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getOrders } from '../api/backend';
 
 interface OrderLineItem {
   productId: string;
@@ -19,14 +20,18 @@ export function OrderList() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/orders')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch orders');
-        return res.json();
-      })
-      .then(setOrders)
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
+    const fetchOrders = async () => {
+      try {
+        const data = await getOrders();
+        setOrders(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to fetch orders');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
   }, []);
 
   if (loading) return <div>Loading orders...</div>;

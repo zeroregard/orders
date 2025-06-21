@@ -90,6 +90,97 @@ function parseJwt(token: string): JwtPayload | null {
   }
 }
 
+// Storage keys for persistence
+const STORAGE_KEYS = {
+  TOKEN: 'auto_order_auth_token',
+  USER: 'auto_order_user_data',
+  EXPIRES_AT: 'auto_order_token_expires_at',
+} as const;
+
+// Helper functions for localStorage operations
+const storage = {
+  setAuthData: (token: string, user: User, expiresAt: number) => {
+    try {
+      console.log('🔐 SAVING auth data to localStorage:', {
+        userEmail: user.email,
+        expiresAt: new Date(expiresAt * 1000).toISOString(),
+        timeUntilExpiry: Math.round((expiresAt * 1000 - Date.now()) / (1000 * 60)) + ' minutes'
+      });
+      localStorage.setItem(STORAGE_KEYS.TOKEN, token);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, expiresAt.toString());
+      console.log('✅ Auth data saved successfully');
+    } catch (error) {
+      console.warn('❌ Failed to save auth data to localStorage:', error);
+    }
+  },
+  
+  getAuthData: (): { token: string; user: User; expiresAt: number } | null => {
+    try {
+      console.log('🔍 LOADING auth data from localStorage...');
+      const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+      const userStr = localStorage.getItem(STORAGE_KEYS.USER);
+      const expiresAtStr = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
+      
+      console.log('📋 Raw localStorage data:', {
+        hasToken: !!token,
+        hasUser: !!userStr, 
+        hasExpiresAt: !!expiresAtStr,
+        tokenLength: token?.length,
+        expiresAtValue: expiresAtStr
+      });
+      
+      if (!token || !userStr || !expiresAtStr) {
+        console.log('❌ Missing auth data in localStorage');
+        return null;
+      }
+      
+      const user = JSON.parse(userStr) as User;
+      const expiresAt = parseInt(expiresAtStr, 10);
+      
+      console.log('✅ Successfully loaded auth data:', {
+        userEmail: user.email,
+        expiresAt: new Date(expiresAt * 1000).toISOString(),
+        timeUntilExpiry: Math.round((expiresAt * 1000 - Date.now()) / (1000 * 60)) + ' minutes'
+      });
+      
+      return { token, user, expiresAt };
+    } catch (error) {
+      console.warn('❌ Failed to load auth data from localStorage:', error);
+      return null;
+    }
+  },
+  
+  clearAuthData: () => {
+    try {
+      console.log('🗑️ CLEARING auth data from localStorage');
+      console.trace('Stack trace for clearAuthData call:');
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
+      console.log('✅ Auth data cleared successfully');
+    } catch (error) {
+      console.warn('❌ Failed to clear auth data from localStorage:', error);
+    }
+  },
+  
+  isTokenValid: (expiresAt: number): boolean => {
+    // Add 5 minutes buffer before actual expiration
+    const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const isValid = Date.now() < (expiresAt * 1000 - bufferTime);
+    const timeUntilExpiry = Math.round((expiresAt * 1000 - Date.now()) / (1000 * 60));
+    
+    console.log('⏱️ Token validation:', {
+      isValid,
+      expiresAt: new Date(expiresAt * 1000).toISOString(),
+      timeUntilExpiry: timeUntilExpiry + ' minutes',
+      currentTime: new Date().toISOString()
+    });
+    
+    return isValid;
+  },
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -97,6 +188,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
 
   const isAuthenticated = !!user && !!token;
+
+  // Restore authentication state from localStorage on app load
+  useEffect(() => {
+    const restoreAuthState = () => {
+      console.log('🚀 STARTING authentication state restoration...');
+      
+      const storedAuthData = storage.getAuthData();
+      if (!storedAuthData) {
+        console.log('❌ No stored auth data found, user needs to sign in');
+        setIsLoading(false);
+        return;
+      }
+      
+      const { token: storedToken, user: storedUser, expiresAt } = storedAuthData;
+      
+      // Check if token is still valid
+      if (!storage.isTokenValid(expiresAt)) {
+        console.log('⏰ Stored token has expired, clearing auth data');
+        storage.clearAuthData();
+        setIsLoading(false);
+        return;
+      }
+      
+      // Restore auth state
+      console.log('✅ Restoring valid auth session for user:', storedUser.email);
+      setToken(storedToken);
+      setUser(storedUser);
+      setIsLoading(false);
+    };
+    
+    restoreAuthState();
+  }, []);
 
   // Initialize Google Identity Services
   useEffect(() => {
@@ -109,7 +232,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           cancel_on_tap_outside: true,
         });
       }
-      setIsLoading(false);
+      // Don't set loading to false here - let the auth restoration handle it
     };
 
     // Load Google Identity Services script
@@ -159,9 +282,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         sub: payload.sub || '',
       };
 
-      // Store token and user info in memory
+      // Store token and user info in state and localStorage
       setToken(credential);
       setUser(userData);
+      
+      // Persist to localStorage with expiration time
+      if (payload.exp) {
+        storage.setAuthData(credential, userData, payload.exp);
+        console.log('Auth session saved. Token expires at:', new Date(payload.exp * 1000).toISOString());
+      }
     } catch (error) {
       console.error('Sign-in error:', error);
       setError(error instanceof Error ? error.message : 'Sign-in failed');
@@ -172,15 +301,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signOut = () => {
-    // Clear token and user info from memory
+    console.log('🚪 SIGN OUT called for user:', user?.email || 'no user');
+    console.trace('Stack trace for signOut call:');
+    
+    // Clear token and user info from state
     setToken(null);
     setUser(null);
     setError(null);
+    
+    // Clear persisted auth data
+    storage.clearAuthData();
 
     // Revoke Google token if available
     if (window.google && user?.email) {
       window.google.accounts.id.revoke(user.email, () => {
-        console.log('Google token revoked');
+        console.log('✅ Google token revoked');
       });
     }
   };

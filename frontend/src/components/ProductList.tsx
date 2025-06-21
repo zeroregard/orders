@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getProducts } from '../api/backend';
 
 interface Product {
   id: string;
@@ -13,14 +14,18 @@ export function ProductList() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/products')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch products');
-        return res.json();
-      })
-      .then(setProducts)
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
+    const fetchProducts = async () => {
+      try {
+        const data = await getProducts();
+        setProducts(data);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Failed to fetch products');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
   if (loading) return <div>Loading products...</div>;
