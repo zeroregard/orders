@@ -51,20 +51,20 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
 
   return (
     <motion.div
-      className="product-form"
+      className="w-full max-w-none"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="form-header">
-        <div className="form-title">
-          <Package size={24} />
-          <h3>Add New Product</h3>
+      <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <Package size={24} className="text-violet-400" />
+          <h3 className="m-0 text-white text-xl font-semibold">Add New Product</h3>
         </div>
         {onCancel && (
           <motion.button
             type="button"
-            className="close-button"
+            className="flex items-center justify-center w-9 h-9 bg-white/10 border border-white/20 rounded-lg text-white/70 cursor-pointer transition-all duration-200 flex-shrink-0 hover:bg-white/20 hover:text-white"
             onClick={handleCancel}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -75,8 +75,8 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="product-name">Product Name *</label>
+        <div className="mb-6">
+          <label htmlFor="product-name" className="block mb-2 text-white/80 font-medium text-sm">Product Name *</label>
           <input
             id="product-name"
             type="text"
@@ -84,26 +84,27 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
             value={name}
             onChange={e => setName(e.target.value)}
             required
-            className="form-input"
+            className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40"
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="product-description">Description</label>
+        <div className="mb-6">
+          <label htmlFor="product-description" className="block mb-2 text-white/80 font-medium text-sm">Description</label>
           <textarea
             id="product-description"
             placeholder="Enter product description (optional)"
             value={description}
             onChange={e => setDescription(e.target.value)}
-            className="form-input form-textarea"
+            className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40 resize-y min-h-20"
+            style={{ fontFamily: 'inherit' }}
             rows={3}
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="product-price">Price</label>
-          <div className="price-input-container">
-            <span className="price-symbol">$</span>
+        <div className="mb-6">
+          <label htmlFor="product-price" className="block mb-2 text-white/80 font-medium text-sm">Price</label>
+          <div className="relative flex items-center">
+            <span className="absolute left-4 text-white/60 font-semibold pointer-events-none z-10">$</span>
             <input
               id="product-price"
               type="number"
@@ -112,14 +113,14 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
               onChange={e => setPrice(e.target.value)}
               min="0"
               step="0.01"
-              className="form-input price-input"
+              className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40 pl-8"
             />
           </div>
         </div>
 
         {error && (
           <motion.div
-            className="error-message"
+            className="text-red-400/90 text-sm"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2 }}
@@ -128,11 +129,11 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
           </motion.div>
         )}
 
-        <div className="form-actions">
+        <div className="flex gap-4 mt-8 justify-end flex-wrap">
           {onCancel && (
             <motion.button
               type="button"
-              className="cancel-button"
+              className="py-3 px-6 bg-white/10 border border-white/20 rounded-lg text-white/80 font-medium cursor-pointer transition-all duration-200 min-w-30 hover:bg-white/15 hover:text-white"
               onClick={handleCancel}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -143,7 +144,11 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
           <motion.button
             type="submit"
             disabled={loading || !name.trim()}
-            className="submit-button"
+            className="py-3 px-6 border-0 rounded-lg text-white font-semibold cursor-pointer transition-all duration-200 min-w-36 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+            style={{
+              background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
+              boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)'
+            }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >

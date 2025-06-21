@@ -103,16 +103,16 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
 
 
   return (
-    <form className="order-form" onSubmit={handleSubmit}>
-      <div className="form-header">
-        <div className="form-title">
-          <ShoppingCart size={24} />
-          <h3>Create New Order</h3>
+    <form className="w-full max-w-none" onSubmit={handleSubmit}>
+      <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <ShoppingCart size={24} className="text-violet-400" />
+          <h3 className="m-0 text-white text-xl font-semibold">Create New Order</h3>
         </div>
         {onCancel && (
           <button
             type="button"
-            className="close-button"
+            className="flex items-center justify-center w-9 h-9 bg-white/10 border border-white/20 rounded-lg text-white/70 cursor-pointer transition-all duration-200 flex-shrink-0 hover:bg-white/20 hover:text-white"
             onClick={handleCancel}
           >
             <X size={20} />
@@ -121,17 +121,17 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
       </div>
 
       {error && (
-        <div className="error-message">
+        <div className="text-red-400/90 text-sm">
           {error}
         </div>
       )}
 
-      <div className="form-group">
-        <label htmlFor="orderName">Order Name</label>
+      <div className="mb-6">
+        <label htmlFor="orderName" className="block mb-2 text-white/80 font-medium text-sm">Order Name</label>
         <input
           id="orderName"
           type="text"
-          className="form-input"
+          className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40"
           placeholder="Enter order name"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -139,14 +139,14 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
         />
       </div>
 
-      <div className="form-group">
-        <label htmlFor="creationDate">Creation Date</label>
-        <div className="date-input-container">
-          <Calendar size={16} className="date-icon" />
+      <div className="mb-6">
+        <label htmlFor="creationDate" className="block mb-2 text-white/80 font-medium text-sm">Creation Date</label>
+        <div className="relative flex items-center">
+          <Calendar size={16} className="absolute left-3 text-white/60 z-10" />
           <input
             id="creationDate"
             type="date"
-            className="form-input date-input"
+            className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 pl-10"
             value={creationDate}
             onChange={(e) => setCreationDate(e.target.value)}
             required
@@ -154,14 +154,14 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
         </div>
       </div>
 
-      <div className="form-group">
-        <label htmlFor="purchaseDate">Purchase Date</label>
-        <div className="date-input-container">
-          <Calendar size={16} className="date-icon" />
+      <div className="mb-6">
+        <label htmlFor="purchaseDate" className="block mb-2 text-white/80 font-medium text-sm">Purchase Date</label>
+        <div className="relative flex items-center">
+          <Calendar size={16} className="absolute left-3 text-white/60 z-10" />
           <input
             id="purchaseDate"
             type="date"
-            className="form-input date-input"
+            className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 pl-10"
             value={purchaseDate}
             onChange={(e) => setPurchaseDate(e.target.value)}
             required
@@ -255,11 +255,11 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
         )}
       </div>
 
-      <div className="form-actions">
+      <div className="flex gap-4 mt-8 justify-end flex-wrap">
         {onCancel && (
           <button
             type="button"
-            className="cancel-button"
+            className="py-3 px-6 bg-white/10 border border-white/20 rounded-lg text-white/80 font-medium cursor-pointer transition-all duration-200 min-w-30 hover:bg-white/15 hover:text-white"
             onClick={handleCancel}
             disabled={loading}
           >
@@ -268,7 +268,11 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
         )}
         <button
           type="submit"
-          className="submit-button"
+          className="py-3 px-6 border-0 rounded-lg text-white font-semibold cursor-pointer transition-all duration-200 min-w-36 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+          style={{
+            background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
+            boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)'
+          }}
           disabled={loading || products.length === 0 || lineItems.length === 0}
         >
           {loading ? 'Creating Order...' : 'Create Order'}

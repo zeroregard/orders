@@ -37,14 +37,14 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
 
   if (isLoading) {
     return (
-      <div className="google-signin-loading">
-        <div className="loading-spinner">Loading Google Sign-In...</div>
+      <div className="flex items-center justify-center py-3 px-6 text-white/70 text-sm">
+        <div className="relative">Loading Google Sign-In...</div>
       </div>
     );
   }
 
   return (
-    <div className="google-signin-container">
+    <div className="flex justify-center items-center">
       <div ref={buttonRef} className="google-signin-button" />
     </div>
   );

@@ -25,24 +25,38 @@ const AuthStatus = () => {
 
   if (error) {
     return (
-      <div className="auth-status error">
-        <span className="error-message">{error}</span>
-        <button onClick={clearError} className="clear-error-btn">×</button>
+      <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 rounded-lg py-2 px-4">
+        <span className="text-red-400/90 text-sm">{error}</span>
+        <button 
+          onClick={clearError} 
+          className="bg-transparent border-0 text-red-400/70 cursor-pointer text-xl p-1 rounded transition-all duration-200 hover:bg-red-500/20 hover:text-red-400"
+        >
+          ×
+        </button>
       </div>
     );
   }
 
   if (isAuthenticated && user) {
     return (
-      <div className="auth-status">
-        <img src={user.picture} alt={user.name} className="user-avatar" />
-        <button onClick={signOut} className="sign-out-btn">Sign Out</button>
+      <div className="flex items-center gap-3">
+        <img 
+          src={user.picture} 
+          alt={user.name} 
+          className="w-8 h-8 rounded-full border-2 border-white/20" 
+        />
+        <button 
+          onClick={signOut} 
+          className="bg-red-500/20 border border-red-500/40 text-white rounded-md py-1.5 px-3 text-xs cursor-pointer transition-all duration-200 hover:bg-red-500/30 hover:border-red-500/60"
+        >
+          Sign Out
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="auth-status">
+    <div className="flex items-center gap-3">
       <GoogleSignInButton size="medium" />
     </div>
   );
@@ -52,7 +66,13 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="app dark-mode">
+        <div 
+          className="min-h-screen flex flex-col text-white dark-mode"
+          style={{
+            background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
+            fontFamily: "'Inter', system-ui, -apple-system, 'Segoe UI', 'Roboto', sans-serif"
+          }}
+        >
           <AppInitializer />
           <AppContent />
         </div>
@@ -68,10 +88,21 @@ const AppContent = () => {
   // Show loading screen while auth is being restored
   if (isLoading) {
     return (
-      <div className="app-loading">
-        <div className="loading-content">
-          <div className="loading-spinner"></div>
-          <p>Loading...</p>
+      <div 
+        className="min-h-screen flex items-center justify-center text-white"
+        style={{
+          background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)'
+        }}
+      >
+        <div className="text-center p-8">
+          <div 
+            className="w-10 h-10 border-4 border-white/30 rounded-full mx-auto mb-4"
+            style={{
+              borderTopColor: '#8b5cf6',
+              animation: 'spin 1s linear infinite'
+            }}
+          ></div>
+          <p className="text-white/80 text-base m-0">Loading...</p>
         </div>
       </div>
     );
@@ -79,13 +110,19 @@ const AppContent = () => {
 
   return (
     <>
-      <header className="app-header p-4">
+      <header 
+        className="sticky top-0 z-50 py-4 border-b border-white/10 p-4"
+        style={{
+          background: 'rgba(15, 15, 35, 0.95)',
+          backdropFilter: 'blur(12px)'
+        }}
+      >
         <div className="flex items-center gap-2 justify-between w-full">
           <Navigation />
           <AuthStatus />
         </div>
       </header>
-      <main className="app-content">
+      <main className="flex-1 p-0 overflow-x-hidden">
         <Routes>
           <Route path="/" element={<ProductsPage />} />
           <Route path="/products" element={<ProductsPage />} />
@@ -94,8 +131,13 @@ const AppContent = () => {
           <Route path="/orders/:id" element={<OrderDetailPage />} />
         </Routes>
       </main>
-      <footer className="app-footer">
-        <p>Auto-Order System &copy; {new Date().getFullYear()}</p>
+      <footer 
+        className="py-4 text-center mt-auto border-t border-white/10"
+        style={{
+          background: 'rgba(15, 15, 35, 0.8)'
+        }}
+      >
+        <p className="m-0 text-white/60 text-sm">Auto-Order System &copy; {new Date().getFullYear()}</p>
       </footer>
     </>
   );
