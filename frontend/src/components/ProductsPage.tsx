@@ -1,40 +1,93 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Package, Search, Trash2, Edit } from 'lucide-react';
-import { useProducts, useDeleteProduct } from '../hooks/useApi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Plus, Trash2, Edit, Calendar, DollarSign } from 'lucide-react';
+import { getProducts, deleteProduct } from '../api/backend';
+import type { Product } from '../types/backendSchemas';
 import { ProductForm } from './ProductForm';
-import './ProductsPage.css';
 
 export function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'price'>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showForm, setShowForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: products = [], isLoading, error } = useProducts();
-  const deleteProductMutation = useDeleteProduct();
-
-  const handleDeleteProduct = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
-        await deleteProductMutation.mutateAsync(id);
-      } catch (error) {
-        console.error('Failed to delete product:', error);
-        // Error handling is already done by React Query
-      }
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await getProducts();
+      setProducts(data as Product[]);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch products');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
-  if (isLoading) {
+  const filteredAndSortedProducts = useMemo(() => {
+    const filtered = products.filter(product =>
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    filtered.sort((a, b) => {
+      let aValue: string | number, bValue: string | number;
+      
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'createdAt':
+          aValue = new Date(a.createdAt || 0).getTime();
+          bValue = new Date(b.createdAt || 0).getTime();
+          break;
+        case 'price':
+          aValue = a.price || 0;
+          bValue = b.price || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+
+    return filtered;
+  }, [products, searchQuery, sortBy, sortOrder]);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    
+    try {
+      await deleteProduct(id);
+      await fetchProducts();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete product');
+    }
+  };
+
+  const handleCreate = async () => {
+    await fetchProducts();
+    setShowForm(false);
+  };
+
+  if (loading) {
     return (
       <div className="products-page">
-        <div className="loading-container">
-          <Package size={48} />
-          <h2>Loading products...</h2>
-        </div>
+        <div className="loading">Loading products...</div>
       </div>
     );
   }
@@ -42,128 +95,177 @@ export function ProductsPage() {
   if (error) {
     return (
       <div className="products-page">
-        <div className="error-container">
-          <h2>Error loading products</h2>
-          <p>{error instanceof Error ? error.message : 'Failed to load products'}</p>
-        </div>
+        <div className="error">{error}</div>
       </div>
     );
   }
 
   return (
     <div className="products-page">
-      <div className="products-header">
+      <motion.div
+        className="page-header"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="header-content">
-          <div className="title-section">
-            <Package size={32} />
-            <h1>Products</h1>
+          <h1>Products</h1>
+          <div className="header-actions">
+            <motion.button
+              className="add-button"
+              onClick={() => setShowForm(true)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Plus size={20} />
+              Add Product
+            </motion.button>
           </div>
-          <button
-            className="add-product-button"
-            onClick={() => setShowForm(true)}
+        </div>
+      </motion.div>
+
+      <motion.div
+        className="filters-section"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
+        <div className="search-container">
+          <Search size={20} className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
+
+        </div>
+
+        <div className="sort-container">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as 'name' | 'createdAt' | 'price')}
+            className="sort-select"
           >
-            <Plus size={20} />
-            Add Product
+            <option value="createdAt">Sort by Date</option>
+            <option value="name">Sort by Name</option>
+            <option value="price">Sort by Price</option>
+          </select>
+          <button
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="sort-order-button"
+          >
+            {sortOrder === 'asc' ? '↑' : '↓'}
           </button>
         </div>
+      </motion.div>
 
-        <div className="search-section">
-          <div className="search-input-container">
-            <Search size={20} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-          </div>
-        </div>
-      </div>
-
-      {showForm && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <ProductForm
-              onCreated={() => {
-                setShowForm(false);
-                // No need to manually refetch - React Query will handle it
-              }}
-              onCancel={() => setShowForm(false)}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="products-content">
-        {filteredProducts.length === 0 ? (
-          <div className="empty-state">
-            <Package size={64} />
-            <h2>
-              {searchTerm 
-                ? `No products found matching "${searchTerm}"`
-                : 'No products yet'
-              }
-            </h2>
-            <p>
-              {searchTerm 
-                ? 'Try adjusting your search terms'
-                : 'Get started by adding your first product'
-              }
-            </p>
-            {!searchTerm && (
-              <button
-                className="add-first-product-button"
-                onClick={() => setShowForm(true)}
-              >
-                <Plus size={20} />
-                Add Your First Product
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="products-grid">
-            {filteredProducts.map((product) => (
-              <div key={product.id} className="product-card">
-                <div className="product-header">
-                  <Link to={`/products/${product.id}`} className="product-name-link">
-                    <h3 className="product-name">{product.name}</h3>
-                  </Link>
-                  <div className="product-actions">
-                    <button
-                      className="action-button edit"
-                      onClick={() => {/* TODO: Implement edit */}}
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      className="action-button delete"
-                      onClick={() => handleDeleteProduct(product.id)}
-                      disabled={deleteProductMutation.isPending}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-                
-                {product.description && (
-                  <p className="product-description">{product.description}</p>
-                )}
-                
-                {product.price !== undefined && (
-                  <div className="product-price">${product.price.toFixed(2)}</div>
-                )}
-                
-                <div className="product-footer">
-                  <Link to={`/products/${product.id}`} className="view-details-btn">
-                    View Details
-                  </Link>
+      <motion.div
+        className="products-grid"
+        layout
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
+        <AnimatePresence mode="popLayout">
+          {filteredAndSortedProducts.map((product) => (
+            <motion.div
+              key={product.id}
+              className="product-card"
+              layout
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              whileHover={{ y: -4, boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)' }}
+            >
+              <div className="card-header">
+                <Link to={`/products/${product.id}`} className="product-name">
+                  {product.name}
+                </Link>
+                <div className="card-actions">
+                  <motion.button
+                    className="action-button edit"
+                    onClick={() => {/* TODO: Implement edit */}}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <Edit size={16} />
+                  </motion.button>
+                  <motion.button
+                    className="action-button delete"
+                    onClick={() => handleDelete(product.id)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <Trash2 size={16} />
+                  </motion.button>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {product.description && (
+                <p className="product-description">{product.description}</p>
+              )}
+
+              <div className="product-meta">
+                {product.price !== undefined && (
+                  <div className="meta-item">
+                    <DollarSign size={16} />
+                    <span>${product.price.toFixed(2)}</span>
+                  </div>
+                )}
+                {product.createdAt && (
+                  <div className="meta-item">
+                    <Calendar size={16} />
+                    <span>{new Date(product.createdAt).toLocaleDateString()}</span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
+
+      {filteredAndSortedProducts.length === 0 && !loading && (
+        <motion.div
+          className="empty-state"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <p>No products found.</p>
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="clear-search">
+              Clear search
+            </button>
+          )}
+        </motion.div>
+      )}
+
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowForm(false)}
+          >
+            <motion.div
+              className="modal-content"
+              initial={{ opacity: 0, scale: 0.8, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 50 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ProductForm
+                onCreated={handleCreate}
+              />
+            </motion.div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 } 

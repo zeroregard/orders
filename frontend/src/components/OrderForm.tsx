@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, Plus, Trash2, ShoppingCart, Calendar, Package } from 'lucide-react';
-import { useProducts, useCreateOrder } from '../hooks/useApi';
+import { getProducts, createOrder } from '../api/backend';
+import type { Product } from '../types/backendSchemas';
 import './OrderForm.css';
 
 interface OrderFormProps {
@@ -17,23 +18,32 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
   const [name, setName] = useState('');
   const [creationDate, setCreationDate] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('');
+  const [products, setProducts] = useState<Product[]>([]);
   const [lineItems, setLineItems] = useState<LineItemForm[]>([]);
-
-  // Use React Query hooks
-  const { data: products = [], isLoading: productsLoading } = useProducts();
-  const createOrderMutation = useCreateOrder();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const productsData = await getProducts();
+        setProducts(productsData);
+        if (productsData.length > 0) {
+          setLineItems([{ productId: productsData[0].id, quantity: 1 }]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch products:', err);
+        setProducts([]);
+      }
+    };
+
+    fetchProducts();
+
     // Set default dates
     const today = new Date().toISOString().split('T')[0];
     setCreationDate(today);
     setPurchaseDate(today);
-
-    // Initialize with first product if available
-    if (products.length > 0 && lineItems.length === 0) {
-      setLineItems([{ productId: products[0].id, quantity: 1 }]);
-    }
-  }, [products, lineItems.length]);
+  }, []);
 
   const addLineItem = () => {
     if (products.length > 0) {
@@ -57,11 +67,15 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
     e.preventDefault();
     
     if (lineItems.length === 0) {
+      setError('Please add at least one line item');
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     try {
-      await createOrderMutation.mutateAsync({
+      await createOrder({
         name,
         creationDate,
         purchaseDate,
@@ -70,15 +84,15 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
 
       // Reset form
       setName('');
-      const today = new Date().toISOString().split('T')[0];
-      setCreationDate(today);
-      setPurchaseDate(today);
-      setLineItems(products.length > 0 ? [{ productId: products[0].id, quantity: 1 }] : []);
+      setCreationDate('');
+      setPurchaseDate('');
+      setLineItems([]);
       
       if (onCreated) onCreated();
     } catch (err) {
-      // Error is handled by React Query and available via createOrderMutation.error
-      console.error('Failed to create order:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create order');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -86,8 +100,7 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
     if (onCancel) onCancel();
   };
 
-  const isLoading = productsLoading || createOrderMutation.isPending;
-  const error = createOrderMutation.error;
+
 
   return (
     <form className="order-form" onSubmit={handleSubmit}>
@@ -109,7 +122,7 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
 
       {error && (
         <div className="error-message">
-          {error instanceof Error ? error.message : 'Failed to create order'}
+          {error}
         </div>
       )}
 
@@ -235,13 +248,7 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
           </div>
         )}
 
-        {productsLoading && (
-          <div className="loading-message">
-            <p>Loading products...</p>
-          </div>
-        )}
-
-        {!productsLoading && products.length === 0 && (
+        {products.length === 0 && (
           <div className="no-products-message">
             <p>No products available. Please create some products first.</p>
           </div>
@@ -254,7 +261,7 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
             type="button"
             className="cancel-button"
             onClick={handleCancel}
-            disabled={isLoading}
+            disabled={loading}
           >
             Cancel
           </button>
@@ -262,9 +269,9 @@ export function OrderForm({ onCreated, onCancel }: OrderFormProps) {
         <button
           type="submit"
           className="submit-button"
-          disabled={isLoading || products.length === 0 || lineItems.length === 0}
+          disabled={loading || products.length === 0 || lineItems.length === 0}
         >
-          {createOrderMutation.isPending ? 'Creating Order...' : 'Create Order'}
+          {loading ? 'Creating Order...' : 'Create Order'}
         </button>
       </div>
     </form>
