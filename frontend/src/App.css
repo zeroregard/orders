@@ -132,17 +132,51 @@
 /* Google Sign-In Button Styles */
 .google-signin-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 0.5rem;
 }
 
 .google-signin-loading {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.875rem;
+}
+
+.google-signin-error {
+  text-align: center;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.google-signin-error p {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: rgba(239, 68, 68, 0.9);
+}
+
+.retry-button {
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  color: white;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retry-button:hover {
+  background: rgba(139, 92, 246, 0.3);
+  border-color: rgba(139, 92, 246, 0.6);
 }
 
 .loading-spinner {
@@ -159,6 +193,37 @@
   border-radius: 50%;
   border-top-color: rgba(255, 255, 255, 0.8);
   animation: spin 1s ease-in-out infinite;
+}
+
+/* App Loading Screen */
+.app-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  color: white;
+}
+
+.loading-content {
+  text-align: center;
+  padding: 2rem;
+}
+
+.loading-content .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #8b5cf6;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+.loading-content p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  margin: 0;
 }
 
 /* Main Content */

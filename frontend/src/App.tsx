@@ -15,6 +15,7 @@ const AppInitializer = () => {
   const { token, signOut } = useAuth();
 
   useEffect(() => {
+    console.log('🔧 Configuring apiClient with token:', token ? 'present' : 'missing');
     // Configure API client with token getter and auth error handler
     apiClient.setTokenGetter(() => token);
     apiClient.setAuthErrorHandler(() => signOut());
@@ -59,31 +60,54 @@ function App() {
       <Router>
         <div className="app dark-mode">
           <AppInitializer />
-          <header className="app-header">
-            <div className="header-content">
-              <h1>Auto-Order System</h1>
-              <div className="header-nav">
-                <Navigation />
-                <AuthStatus />
-              </div>
-            </div>
-          </header>
-          <main className="app-content">
-            <Routes>
-              <Route path="/" element={<ProductsPage />} />
-              <Route path="/products" element={<ProductsPage />} />
-              <Route path="/products/:id" element={<ProductDetailPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/orders/:id" element={<OrderDetailPage />} />
-            </Routes>
-          </main>
-          <footer className="app-footer">
-            <p>Auto-Order System &copy; {new Date().getFullYear()}</p>
-          </footer>
+          <AppContent />
         </div>
       </Router>
     </AuthProvider>
   );
 }
+
+// Separate component to handle loading state
+const AppContent = () => {
+  const { isLoading } = useAuth();
+
+  // Show loading screen while auth is being restored
+  if (isLoading) {
+    return (
+      <div className="app-loading">
+        <div className="loading-content">
+          <div className="loading-spinner"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <header className="app-header">
+        <div className="header-content">
+          <h1>Auto-Order System</h1>
+          <div className="header-nav">
+            <Navigation />
+            <AuthStatus />
+          </div>
+        </div>
+      </header>
+      <main className="app-content">
+        <Routes>
+          <Route path="/" element={<ProductsPage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/products/:id" element={<ProductDetailPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/orders/:id" element={<OrderDetailPage />} />
+        </Routes>
+      </main>
+      <footer className="app-footer">
+        <p>Auto-Order System &copy; {new Date().getFullYear()}</p>
+      </footer>
+    </>
+  );
+};
 
 export default App;

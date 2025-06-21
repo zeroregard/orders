@@ -51,6 +51,7 @@ interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  googleReady: boolean;
   error: string | null;
   signIn: (credential: string) => Promise<void>;
   signOut: () => void;
@@ -185,6 +186,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [googleReady, setGoogleReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isAuthenticated = !!user && !!token;
@@ -225,25 +227,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const initializeGoogleAuth = () => {
       if (window.google) {
-        window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your-google-client-id',
-          callback: handleCredentialResponse,
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
+        console.log('🟢 Initializing Google Identity Services...');
+        try {
+          window.google.accounts.id.initialize({
+            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your-google-client-id',
+            callback: handleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: true,
+          });
+          setGoogleReady(true);
+          console.log('✅ Google Identity Services ready');
+        } catch (error) {
+          console.error('❌ Failed to initialize Google Identity Services:', error);
+          setGoogleReady(false);
+        }
       }
-      // Don't set loading to false here - let the auth restoration handle it
     };
 
     // Load Google Identity Services script
     if (!window.google) {
+      console.log('📥 Loading Google Identity Services script...');
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
-      script.onload = initializeGoogleAuth;
+      script.onload = () => {
+        console.log('📦 Google Identity Services script loaded');
+        initializeGoogleAuth();
+      };
+      script.onerror = () => {
+        console.error('❌ Failed to load Google Identity Services script');
+        setGoogleReady(false);
+      };
       document.head.appendChild(script);
     } else {
+      console.log('🔄 Google Identity Services already available');
       initializeGoogleAuth();
     }
   }, []);
@@ -329,6 +347,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     token,
     isAuthenticated,
     isLoading,
+    googleReady,
     error,
     signIn,
     signOut,

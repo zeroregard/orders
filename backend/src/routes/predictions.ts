@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../services/database';
+import type { Order } from '../generated/prisma';
 
 const router = Router();
 
@@ -71,7 +72,7 @@ router.get('/:productId', async (req, res) => {
     }
 
     // Calculate intervals between purchases
-    const purchaseDates = relevantOrders.map(order => new Date(order.purchaseDate));
+    const purchaseDates = relevantOrders.map((order: Order) => new Date(order.purchaseDate));
     const intervals: number[] = [];
     for (let i = 1; i < purchaseDates.length; i++) {
       intervals.push(purchaseDates[i].getTime() - purchaseDates[i - 1].getTime());
