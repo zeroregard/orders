@@ -34,12 +34,14 @@ export interface CreateProductRequest {
   name: string;
   description?: string;
   price?: number;
+  iconId?: string;
 }
 
 export interface UpdateProductRequest {
   name?: string;
   description?: string;
   price?: number;
+  iconId?: string;
 }
 
 export interface CreateOrderRequest {
@@ -55,7 +57,8 @@ export interface CreateOrderRequest {
 
 export interface PredictionResponse {
   productId: string;
-  predictedNextPurchaseDate: string;
+  predictedPurchaseDates: string[];
+  averageFrequency: string; // ISO Duration string
 }
 
 export interface AuthUser {

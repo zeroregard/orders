@@ -4,7 +4,7 @@ import './PurchaseGraph.css';
 
 interface PurchaseGraphProps {
   purchaseHistory: PurchaseHistory;
-  predictedDate?: string;
+  predictedDates?: string[];
 }
 
 interface DayData {
@@ -14,7 +14,7 @@ interface DayData {
   month: number; // Add month to track which month each day belongs to
 }
 
-const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predictedDate }) => {
+const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predictedDates }) => {
   const [days, setDays] = useState<DayData[]>([]);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
     while (currentDate <= endDate) {
       const dateStr = currentDate.toISOString().split('T')[0];
       const purchase = purchaseHistory.purchases.find(p => p.date === dateStr);
-      const isPredicted = predictedDate === dateStr;
+      const isPredicted = currentYearPredictions?.includes(dateStr) ?? false;
 
       allDays.push({
         date: dateStr,
@@ -43,7 +43,12 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
     }
 
     setDays(allDays);
-  }, [purchaseHistory, predictedDate]);
+  }, [purchaseHistory, predictedDates]);
+
+  // Filter predictions to only show current year
+  const currentYearPredictions = predictedDates?.filter(
+    date => new Date(date).getFullYear() === new Date().getFullYear()
+  );
 
   // Calculate color intensity based on quantity
   const getColorStyle = (quantity: number, isPredicted: boolean) => {
@@ -57,8 +62,10 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
 
     if (isPredicted) {
       return {
-        backgroundColor: 'red',
-        border: `8px solid rgba(255, 255, 255, 1})`,
+        backgroundColor: 'transparent',
+        borderColor: '#7c4dff',
+        bordeStyle: 'solid',
+        borderWidth: '1px'
       };
     }
 
