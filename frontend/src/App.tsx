@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Navigation, GoogleSignInButton } from './components';
+import { Navigation, GoogleSignInButton, ProtectedRoute } from './components';
 import { ProductsPage, ProductDetailPage, OrdersPage, OrderDetailPage } from './pages';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { apiClient } from './utils/apiClient';
@@ -124,11 +124,30 @@ const AppContent = () => {
       </header>
       <main className="flex p-0 overflow-x-hidden overflow-y-auto grow shrink">
         <Routes>
+          {/* Landing page - not protected */}
           <Route path="/" element={<ProductsPage />} />
-          <Route path="/products" element={<ProductsPage />} />
-          <Route path="/products/:id" element={<ProductDetailPage />} />
-          <Route path="/orders" element={<OrdersPage />} />
-          <Route path="/orders/:id" element={<OrderDetailPage />} />
+          
+          {/* Protected routes */}
+          <Route path="/products" element={
+            <ProtectedRoute>
+              <ProductsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/products/:id" element={
+            <ProtectedRoute>
+              <ProductDetailPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/orders" element={
+            <ProtectedRoute>
+              <OrdersPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/orders/:id" element={
+            <ProtectedRoute>
+              <OrderDetailPage />
+            </ProtectedRoute>
+          } />
         </Routes>
       </main>
     </div>

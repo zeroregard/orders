@@ -72,11 +72,6 @@ export function ProductDetailPage() {
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-white m-0">{product.name}</h1>
-        <Link to="/products">
-          <button className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
-            Back to Products
-          </button>
-        </Link>
       </div>
 
       <div className="bg-white/5 border border-white/20 rounded-2xl p-6 mb-8">

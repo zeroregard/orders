@@ -1,2 +1,3 @@
-export { GoogleSignInButton } from './GoogleSignInButton';
-export { AuthError } from './AuthError'; 
+export * from './AuthError';
+export * from './GoogleSignInButton';
+export * from './ProtectedRoute'; 
