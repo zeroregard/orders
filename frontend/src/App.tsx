@@ -16,7 +16,7 @@ const AppInitializer = () => {
     // Configure API client with token getter and auth error handler
     apiClient.setTokenGetter(() => auth.token);
     apiClient.setAuthErrorHandler(() => auth.signOut());
-  }, [auth.token, auth.signOut]);
+  }, [auth.token, auth.signOut, auth]);
 
   return null;
 };

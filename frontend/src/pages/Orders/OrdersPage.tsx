@@ -1,19 +1,25 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, Trash2, Calendar, ShoppingCart, Package } from 'lucide-react';
-import { getOrders, deleteOrder } from '../../api/backend';
+import { motion } from 'framer-motion';
+import { Plus, Calendar, ShoppingCart } from 'lucide-react';
+import { getOrders } from '../../api/backend';
 import type { Order } from '../../types/backendSchemas';
 import { OrderForm } from './components/OrderForm';
-import { SkeletonCard, PageLayout } from '../../components';
+import { PageLayout } from '../../components';
+import { SearchBar, type SortOption } from '../../components/Search/SearchBar';
 import { formatDate } from '../../utils/dateFormatting';
+
+const sortOptions: SortOption[] = [
+  { value: 'purchaseDate', label: 'Purchase Date' },
+  { value: 'name', label: 'Name' },
+];
 
 export function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'purchaseDate'>('createdAt');
+  const [sortBy, setSortBy] = useState<string>('purchaseDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showForm, setShowForm] = useState(false);
 
@@ -76,7 +82,7 @@ export function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="page">
+      <PageLayout>
         <motion.div
           className="mb-8"
           initial={{ opacity: 0, y: -20 }}
@@ -104,15 +110,34 @@ export function OrdersPage() {
           </div>
         </motion.div>
 
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          <SkeletonCard variant="list" count={6} />
-        </motion.div>
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-gray-800 border border-gray-700 rounded-xl p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-6 h-6 bg-white/5 rounded animate-pulse" />
+                <div className="h-7 w-48 bg-white/5 rounded animate-pulse" />
+              </div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-4 h-4 bg-white/5 rounded animate-pulse" />
+                <div className="h-5 w-32 bg-white/5 rounded animate-pulse" />
+              </div>
+              <div className="border-t border-gray-700 pt-4 mt-4">
+                <div className="space-y-2">
+                  {[...Array(2)].map((_, j) => (
+                    <div key={j} className="flex justify-between items-center">
+                      <div className="h-5 w-32 bg-white/5 rounded animate-pulse" />
+                      <div className="h-5 w-8 bg-white/5 rounded animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </PageLayout>
     );
   }
 
@@ -159,114 +184,87 @@ export function OrdersPage() {
       </motion.div>
 
       <motion.div
-        className="mb-8 flex flex-col sm:flex-row gap-4"
+        className="mb-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        <div className="relative flex-1">
-          <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search orders..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'name' | 'createdAt' | 'purchaseDate')}
-            className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          >
-            <option value="createdAt">Sort by Creation Date</option>
-            <option value="purchaseDate">Sort by Purchase Date</option>
-            <option value="name">Sort by Name</option>
-          </select>
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-          >
-            {sortOrder === 'asc' ? '↑' : '↓'}
-          </button>
-        </div>
+        <SearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          sortOrder={sortOrder}
+          onSortOrderChange={setSortOrder}
+          sortOptions={sortOptions}
+        />
       </motion.div>
 
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        layout
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
+        transition={{ duration: 0.3 }}
       >
-        <AnimatePresence mode="popLayout">
-          {filteredAndSortedOrders.map((order) => (
-            <motion.div
-              key={order.id}
-              className="bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-purple-500 transition-colors"
-              layout
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2 }}
-              whileHover={{ y: -4, boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)' }}
-            >
-              <div className="flex justify-between items-center mb-4">
-                <Link 
-                  to={`/orders/${order.id}`} 
-                  className="flex items-center gap-3 text-xl font-semibold text-white hover:text-purple-400 transition-colors"
-                >
-                  <ShoppingCart size={24} className="text-purple-400" />
-                  <span className="mb-1">{order.name}</span>
-                </Link>
-              </div>
+        {filteredAndSortedOrders.map((order) => (
+          <motion.div
+            key={order.id}
+            className="bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-purple-500 transition-colors"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            whileHover={{ y: -4, boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)' }}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <Link 
+                to={`/orders/${order.id}`} 
+                className="flex items-center gap-3 text-xl font-semibold text-white hover:text-purple-400 transition-colors"
+              >
+                <ShoppingCart size={24} className="text-purple-400" />
+                <span className="mb-1">{order.name}</span>
+              </Link>
+            </div>
 
-              <div className="flex items-center gap-2 text-gray-400">
-                <Calendar size={16} className="mb-[1px]" />
-                <span className="text-sm">Purchased </span>
-                <span className="text-sm">
-                  {formatDate(order.purchaseDate)}
-                </span>
-              </div>
+            <div className="flex items-center gap-2 text-gray-400">
+              <Calendar size={16} className="mb-[1px]" />
+              <span className="text-sm">
+                {formatDate(order.purchaseDate)}
+              </span>
+            </div>
 
-              {order.lineItems.length > 0 && (
-                <div className="border-t border-gray-700 pt-4 mt-4">
-                  <div className="space-y-2">
-                    {order.lineItems.slice(0, 3).map((item, index) => (
-                      <motion.div
-                        key={`${item.productId}-${index}`}
-                        className="flex justify-between items-center text-sm"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2, delay: index * 0.05 }}
+            {order.lineItems.length > 0 && (
+              <div className="border-t border-gray-700 pt-4 mt-4">
+                <div className="space-y-2">
+                  {order.lineItems.slice(0, 3).map((item, index) => (
+                    <div
+                      key={`${item.productId}-${index}`}
+                      className="flex justify-between items-center text-sm"
+                    >
+                      <Link 
+                        to={`/products/${item.productId}`}
+                        className="text-purple-400 hover:text-purple-300 transition-colors flex-1 truncate"
                       >
-                        <Link 
-                          to={`/products/${item.productId}`}
-                          className="text-purple-400 hover:text-purple-300 transition-colors flex-1 truncate"
-                        >
-                          {item.product?.name || item.productName || `Product ${item.productId}`}
-                        </Link>
-                        <span className="text-gray-400 ml-2">×{item.quantity}</span>
-                      </motion.div>
-                    ))}
-                    {order.lineItems.length > 3 && (
-                      <div className="text-sm">
-                        <Link 
-                          to={`/orders/${order.id}`} 
-                          className="text-purple-400 hover:text-purple-300 transition-colors"
-                        >
-                          +{order.lineItems.length - 3} more items
-                        </Link>
-                      </div>
-                    )}
-                  </div>
+                        {item.product?.name || item.productName || `Product ${item.productId}`}
+                      </Link>
+                      <span className="text-gray-400 ml-2">×{item.quantity}</span>
+                    </div>
+                  ))}
+                  {order.lineItems.length > 3 && (
+                    <div className="text-sm">
+                      <Link 
+                        to={`/orders/${order.id}`} 
+                        className="text-purple-400 hover:text-purple-300 transition-colors"
+                      >
+                        +{order.lineItems.length - 3} more items
+                      </Link>
+                    </div>
+                  )}
                 </div>
-              )}
-            </motion.div>
-          ))}
-        </AnimatePresence>
+              </div>
+            )}
+          </motion.div>
+        ))}
       </motion.div>
 
       {filteredAndSortedOrders.length === 0 && !loading && (
@@ -288,34 +286,32 @@ export function OrdersPage() {
         </motion.div>
       )}
 
-      <AnimatePresence>
-        {showForm && (
+      {showForm && (
+        <motion.div
+          className="fixed inset-0 flex items-center justify-center p-4 z-50"
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.30)',
+            backdropFilter: 'blur(3px)',
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setShowForm(false)}
+        >
           <motion.div
-            className="fixed inset-0 flex items-center justify-center p-4 z-50"
-            style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.30)',
-              backdropFilter: 'blur(3px)',
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowForm(false)}
+            className="bg-gray-800 rounded-xl p-6 w-full max-w-md max-h-screen overflow-y-auto"
+            initial={{ opacity: 0, scale: 0.8, y: 50 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 50 }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              className="bg-gray-800 rounded-xl p-6 w-full max-w-md max-h-screen overflow-y-auto"
-              initial={{ opacity: 0, scale: 0.8, y: 50 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 50 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <OrderForm
-                onCreated={handleCreate}
-                onCancel={() => setShowForm(false)}
-              />
-            </motion.div>
+            <OrderForm
+              onCreated={handleCreate}
+              onCancel={() => setShowForm(false)}
+            />
           </motion.div>
-        )}
-      </AnimatePresence>
+        </motion.div>
+      )}
     </PageLayout>
   );
 } 

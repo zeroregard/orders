@@ -1,17 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { GOOGLE_CLIENT_ID } from '../config/auth';
-
-// Create a new file for constants
-// authConstants.ts
-export const GOOGLE_BUTTON_OPTIONS = {
-  theme: 'outline',
-  size: 'large',
-  text: 'signin_with',
-  shape: 'rectangular',
-  logo_alignment: 'left',
-  width: '250px'
-} as const;
+import { STORAGE_KEYS } from '../constants/auth';
 
 // Types for Google Identity Services
 declare global {
@@ -114,13 +104,6 @@ function parseJwt(token: string): JwtPayload | null {
 }
 
 // Storage keys for persistence
-const STORAGE_KEYS = {
-  TOKEN: 'auto_order_auth_token',
-  USER: 'auto_order_user_data',
-  EXPIRES_AT: 'auto_order_token_expires_at',
-} as const;
-
-// Helper functions for localStorage operations
 const storage = {
   setAuthData: (token: string, user: User, expiresAt: number) => {
     try {
@@ -244,42 +227,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
     restoreAuthState();
   }, []);
 
-  // Initialize Google Identity Services
-  useEffect(() => {
-    const initializeGoogleAuth = () => {
-      if (window.google) {
-        window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: handleCredentialResponse,
-          auto_select: false,
-          cancel_on_tap_outside: true,
-          // ux_mode: 'redirect',
-          // login_uri: window.location.origin + '/login',
-        });
-      }
-    };
-
-    // Load Google Identity Services script
-    if (!window.google) {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      script.onload = initializeGoogleAuth;
-      document.head.appendChild(script);
-    } else {
-      initializeGoogleAuth();
-    }
-  }, []);
-
-  const handleCredentialResponse = async (response: GoogleCredentialResponse) => {
+  // Memoize the credential response handler
+  const handleCredentialResponse = useCallback(async (response: GoogleCredentialResponse) => {
     try {
       await signIn(response.credential);
     } catch (error) {
-      console.error('Sign-in error:', error);
-      setError('Failed to sign in. Please try again.');
+      console.error('Failed to handle credential response:', error);
+      setError('Failed to sign in with Google');
     }
-  };
+  }, []);
+
+  // Memoize the Google Auth initialization
+  const initializeGoogleAuth = useCallback(() => {
+    if (!window.google?.accounts?.id) {
+      console.warn('Google Identity Services not loaded');
+      return;
+    }
+
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true,
+    });
+  }, [handleCredentialResponse]);
+
+  useEffect(() => {
+    initializeGoogleAuth();
+  }, [initializeGoogleAuth]);
 
   const signIn = async (credential: string) => {
     try {
@@ -362,6 +337,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

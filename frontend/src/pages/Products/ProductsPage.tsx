@@ -1,20 +1,27 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, Calendar, icons } from 'lucide-react';
+import { Plus, Calendar, icons } from 'lucide-react';
 import { getProducts } from '../../api/backend';
 import type { Product } from '../../types/backendSchemas';
 import { ProductForm } from './components/ProductForm';
-import { SkeletonCard, PageLayout } from '../../components';
+import { PageLayout } from '../../components';
+import { SearchBar, type SortOption } from '../../components/Search/SearchBar';
 import React from 'react';
 import { formatDate } from '../../utils/dateFormatting';
+
+const sortOptions: SortOption[] = [
+  { value: 'createdAt', label: 'Date' },
+  { value: 'name', label: 'Name' },
+  { value: 'price', label: 'Price' },
+];
 
 export function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'price'>('createdAt');
+  const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showForm, setShowForm] = useState(false);
 
@@ -92,28 +99,44 @@ export function ProductsPage() {
         </motion.div>
 
         <motion.div
-          className="mb-8 flex flex-col sm:flex-row gap-4"
+          className="mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <div className="relative flex-1">
-            <div className="w-full h-12 bg-white/5 rounded-lg animate-pulse" />
-          </div>
-          <div className="flex gap-2">
-            <div className="w-32 h-12 bg-white/5 rounded-lg animate-pulse" />
-            <div className="w-12 h-12 bg-white/5 rounded-lg animate-pulse" />
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <div className="h-6 w-16 bg-white/5 rounded mb-2 animate-pulse" />
+              <div className="w-full h-12 bg-white/5 rounded-lg animate-pulse" />
+            </div>
+            <div>
+              <div className="h-6 w-12 bg-white/5 rounded mb-2 animate-pulse" />
+              <div className="w-32 h-12 bg-white/5 rounded-lg animate-pulse" />
+            </div>
+            <div>
+              <div className="h-6 w-16 bg-white/5 rounded mb-2 animate-pulse" />
+              <div className="w-12 h-12 bg-white/5 rounded-lg animate-pulse" />
+            </div>
           </div>
         </motion.div>
 
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          <SkeletonCard variant="list" count={6} />
-        </motion.div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-gray-800 border border-gray-700 rounded-xl p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-6 h-6 bg-white/5 rounded animate-pulse" />
+                <div className="h-7 w-48 bg-white/5 rounded animate-pulse" />
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-white/5 rounded animate-pulse" />
+                <div className="h-5 w-32 bg-white/5 rounded animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
       </PageLayout>
     );
   }
@@ -153,39 +176,20 @@ export function ProductsPage() {
       </motion.div>
 
       <motion.div
-        className="mb-8 flex flex-col sm:flex-row gap-4"
+        className="mb-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        <div className="relative flex-1">
-          <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search products..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'name' | 'createdAt' | 'price')}
-            className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          >
-            <option value="createdAt">Sort by Date</option>
-            <option value="name">Sort by Name</option>
-            <option value="price">Sort by Price</option>
-          </select>
-          <button
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
-          >
-            {sortOrder === 'asc' ? '↑' : '↓'}
-          </button>
-        </div>
+        <SearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          sortOrder={sortOrder}
+          onSortOrderChange={setSortOrder}
+          sortOptions={sortOptions}
+        />
       </motion.div>
 
       <motion.div
@@ -216,8 +220,7 @@ export function ProductsPage() {
                     size: 24,
                     className: "text-purple-400"
                   })}
-                  <span className="mb-1">{product.name}</span>
-
+                  <span className="mb-1 line-clamp-1">{product.name}</span>
                 </Link>
               </div>
 

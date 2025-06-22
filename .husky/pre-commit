@@ -1,7 +1,15 @@
 # Check if there are any changes in the backend directory
 if git diff --cached --name-only | grep -q '^backend/'; then
   echo "Backend changes detected, running backend unit tests..."
-  pnpm --filter backend test:unit
+  pnpm --filter backend test:unit || exit 1
 else
   echo "No backend changes detected, skipping backend tests."
+fi
+
+# Check if there are any changes in the frontend directory
+if git diff --cached --name-only | grep -q '^frontend/'; then
+  echo "Frontend changes detected, running frontend lint..."
+  pnpm --filter frontend lint || exit 1
+else
+  echo "No frontend changes detected, skipping frontend lint."
 fi

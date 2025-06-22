@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Calendar, ScatterChartIcon, icons, AlertCircle } from 'lucide-react';
+import { Calendar, ScatterChartIcon, icons, AlertCircle, BarChart2 } from 'lucide-react';
 import type { Product, PurchaseHistory } from '../../api/backend';
 import { getProducts, getPurchaseHistory, getPrediction } from '../../api/backend';
 import PurchaseGraph from '../../components/Products/PurchaseGraph';
@@ -35,7 +35,34 @@ export function ProductDetailPage() {
     return parts.join(' and ');
   };
 
-  const loadData = async () => {
+  // Helper function to calculate statistics
+  const calculateStats = (history: PurchaseHistory | null, price: number) => {
+    if (!history) return null;
+
+    const totalOrders = history.purchases.length;
+    const totalItems = history.purchases.reduce((sum, p) => sum + p.quantity, 0);
+    const totalSpent = totalItems * price;
+
+    // Calculate annual spend based on current year's data only
+    const currentYear = new Date().getFullYear();
+    const thisYearPurchases = history.purchases.filter(p => 
+      new Date(p.date).getFullYear() === currentYear
+    );
+    
+    const thisYearSpent = thisYearPurchases.reduce((sum, p) => sum + (p.quantity * price), 0);
+    const today = new Date();
+    const daysIntoYear = (today.getTime() - new Date(currentYear, 0, 1).getTime()) / (24 * 60 * 60 * 1000);
+    const annualSpend = thisYearSpent * (365 / daysIntoYear);
+
+    return {
+      totalOrders,
+      totalItems,
+      totalSpent,
+      estimatedAnnualSpend: annualSpend
+    };
+  };
+
+  const loadData = useCallback(async () => {
     if (!id) return;
 
     try {
@@ -75,11 +102,11 @@ export function ProductDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     loadData();
-  }, [id]);
+  }, [loadData]);
 
   const handleProductUpdated = () => {
     setIsEditing(false);
@@ -140,6 +167,38 @@ export function ProductDetailPage() {
 
           {purchaseHistory?.purchases.length ? (
             <>
+              <DetailCard
+                title="Purchase Statistics"
+                icon={BarChart2}
+                className="mb-8"
+              >
+                {(() => {
+                  const stats = calculateStats(purchaseHistory, product.price || 0);
+                  if (!stats) return null;
+
+                  return (
+                    <div className="space-y-2 p-2">
+                      <div className="flex items-center justify-between p-2 bg-gray-800/50 rounded-lg">
+                        <span className="text-gray-400">Orders</span>
+                        <span className="text-lg font-medium text-violet-400">{stats.totalOrders}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gray-800/50 rounded-lg">
+                        <span className="text-gray-400">Items</span>
+                        <span className="text-lg font-medium text-violet-400">{stats.totalItems}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gray-800/50 rounded-lg">
+                        <span className="text-gray-400">Total Spent</span>
+                        <span className="text-lg font-medium text-violet-400">€{stats.totalSpent.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gray-800/50 rounded-lg">
+                        <span className="text-gray-400">Est. Annual</span>
+                        <span className="text-lg font-medium text-violet-400">€{stats.estimatedAnnualSpend.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </DetailCard>
+
               <DetailCard
                 title="Purchase Calendar"
                 icon={Calendar}
