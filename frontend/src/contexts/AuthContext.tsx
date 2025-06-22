@@ -1,5 +1,17 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
+import { GOOGLE_CLIENT_ID } from '../config/auth';
+
+// Create a new file for constants
+// authConstants.ts
+export const GOOGLE_BUTTON_OPTIONS = {
+  theme: 'outline',
+  size: 'large',
+  text: 'signin_with',
+  shape: 'rectangular',
+  logo_alignment: 'left',
+  width: '250px'
+} as const;
 
 // Types for Google Identity Services
 declare global {
@@ -22,6 +34,7 @@ interface GoogleConfig {
   callback: (response: GoogleCredentialResponse) => void;
   auto_select?: boolean;
   cancel_on_tap_outside?: boolean;
+  ux_mode?: 'popup' | 'redirect';
 }
 
 interface GoogleButtonOptions {
@@ -57,7 +70,17 @@ interface AuthContextType {
   clearError: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Create context with a default value that matches the shape
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  token: null,
+  isAuthenticated: false,
+  isLoading: true,
+  error: null,
+  signIn: async () => {},
+  signOut: () => {},
+  clearError: () => {},
+});
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -165,8 +188,8 @@ const storage = {
   },
   
   isTokenValid: (expiresAt: number): boolean => {
-    // Add 5 minutes buffer before actual expiration
-    const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
+    // Add 30 minutes buffer before actual expiration
+    const bufferTime = 30 * 60 * 1000; // 30 minutes in milliseconds
     const isValid = Date.now() < (expiresAt * 1000 - bufferTime);
     const timeUntilExpiry = Math.round((expiresAt * 1000 - Date.now()) / (1000 * 60));
     
@@ -181,7 +204,7 @@ const storage = {
   },
 };
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -226,13 +249,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeGoogleAuth = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your-google-client-id',
+          client_id: GOOGLE_CLIENT_ID,
           callback: handleCredentialResponse,
           auto_select: false,
           cancel_on_tap_outside: true,
+          // ux_mode: 'redirect',
+          // login_uri: window.location.origin + '/login',
         });
       }
-      // Don't set loading to false here - let the auth restoration handle it
     };
 
     // Load Google Identity Services script
@@ -300,7 +324,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signOut = () => {
+  const signOut = useCallback(() => {
     console.log('🚪 SIGN OUT called for user:', user?.email || 'no user');
     console.trace('Stack trace for signOut call:');
     
@@ -318,7 +342,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('✅ Google token revoked');
       });
     }
-  };
+  }, [user?.email]);
 
   const clearError = () => {
     setError(null);
@@ -336,11 +360,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+}
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

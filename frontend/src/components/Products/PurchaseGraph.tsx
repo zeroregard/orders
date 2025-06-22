@@ -16,6 +16,7 @@ interface DayData {
 
 const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predictedDates }) => {
   const [days, setDays] = useState<DayData[]>([]);
+  const [currentYearPredictions, setCurrentYearPredictions] = useState<string[]>([]);
 
   useEffect(() => {
     // Get current year's start and end dates
@@ -43,12 +44,13 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
     }
 
     setDays(allDays);
-  }, [purchaseHistory, predictedDates]);
+  }, [purchaseHistory, predictedDates, currentYearPredictions]);
 
-  // Filter predictions to only show current year
-  const currentYearPredictions = predictedDates?.filter(
-    date => new Date(date).getFullYear() === new Date().getFullYear()
-  );
+  useEffect(() => {
+    setCurrentYearPredictions(
+      predictedDates?.filter(date => new Date(date).getFullYear() === new Date().getFullYear()) || []
+    );
+  }, [predictedDates, currentYearPredictions]);
 
   // Calculate color intensity based on quantity
   const getColorStyle = (quantity: number, isPredicted: boolean) => {

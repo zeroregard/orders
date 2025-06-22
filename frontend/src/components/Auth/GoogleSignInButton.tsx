@@ -20,8 +20,9 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   const { isLoading } = useAuth();
 
   useEffect(() => {
-    // Render the Google Sign-In button when the component mounts
-    if (window.google && buttonRef.current && !isLoading) {
+    const renderButton = () => {
+      if (!window.google || !buttonRef.current) return;
+      
       // Clear any existing button
       buttonRef.current.innerHTML = '';
       
@@ -32,19 +33,27 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         shape,
         width,
       });
+    };
+
+    // If not loading and we have the ref, render immediately
+    if (!isLoading) {
+      renderButton();
     }
+
+    // Also set up an interval to try rendering if the button didn't appear
+    const interval = setInterval(() => {
+      if (buttonRef.current?.innerHTML === '') {
+        renderButton();
+      } else {
+        clearInterval(interval);
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
   }, [isLoading, theme, size, text, shape, width]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-3 px-6 text-white/70 text-sm">
-        <div className="relative">Loading Google Sign-In...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex justify-center items-center">
+    <div className="flex justify-center items-center min-h-[40px]">
       <div ref={buttonRef} className="google-signin-button" />
     </div>
   );

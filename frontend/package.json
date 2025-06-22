@@ -12,6 +12,9 @@
     "env:pull:prod": "vercel env pull .env --environment production"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.17",
+    "@fullcalendar/daygrid": "^6.1.17",
+    "@fullcalendar/react": "^6.1.17",
     "@tanstack/react-query": "^5.80.10",
     "@tanstack/react-query-devtools": "^5.80.10",
     "@types/google.accounts": "^0.0.17",

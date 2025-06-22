@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Package, icons } from 'lucide-react';
+import { Package, Calendar, icons } from 'lucide-react';
 import type { Product, PurchaseHistory } from '../../api/backend';
 import { getProducts, getPurchaseHistory, getPrediction } from '../../api/backend';
 import PurchaseGraph from '../../components/Products/PurchaseGraph';
 import { DetailPageLayout, DetailCard, SkeletonCard } from '../../components';
 import { EditProductForm } from './components/EditProductForm';
+import { PurchaseCalendar } from '../../components/Products/PurchaseCalendar';
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -122,6 +123,16 @@ export function ProductDetailPage() {
               <p>Created: {new Date(product.createdAt).toLocaleDateString()}</p>
               <p>Last Updated: {new Date(product.updatedAt).toLocaleDateString()}</p>
             </div>
+          </DetailCard>
+
+          <DetailCard
+            title="Purchase Calendar"
+            icon={Calendar}
+            className="mb-8"
+          >
+            {purchaseHistory && (
+              <PurchaseCalendar purchaseHistory={purchaseHistory} />
+            )}
           </DetailCard>
 
           <DetailCard

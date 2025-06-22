@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Calendar, ShoppingCart, Package } from 'lucide-react';
 import { getOrders } from '../../api/backend';
@@ -13,7 +13,7 @@ export function OrderDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     if (!id) {
       setError('Order ID not provided');
       setLoading(false);
@@ -38,11 +38,11 @@ export function OrderDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchOrder();
-  }, [id]);
+  }, [fetchOrder]);
 
   const getTotalItems = (order: Order) => {
     return order.lineItems.reduce((total, item) => total + item.quantity, 0);

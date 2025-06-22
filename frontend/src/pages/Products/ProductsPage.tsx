@@ -95,7 +95,7 @@ export function ProductsPage() {
           transition={{ duration: 0.3 }}
         >
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-white">Products</h1>
+            <h1 className="text-white">Products</h1>
             <div className="w-36 h-12 bg-white/5 rounded-lg animate-pulse" />
           </div>
         </motion.div>
@@ -146,7 +146,7 @@ export function ProductsPage() {
         transition={{ duration: 0.3 }}
       >
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-white">Products</h1>
+          <h1 className="text-white">Products</h1>
           <div className="flex gap-4">
             <motion.button
               className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 hover:from-purple-700 hover:to-pink-700 transition-colors"

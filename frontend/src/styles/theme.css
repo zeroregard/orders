@@ -62,10 +62,6 @@ body {
   min-height: 100vh;
 }
 
-/* Form elements */
-input, select, textarea, button {
-  font-family: inherit;
-}
 
 button, 
 .button {
@@ -98,7 +94,6 @@ textarea {
   border: 1px solid var(--surface-variant);
   color: var(--text-primary);
   border-radius: var(--radius-sm);
-  padding: var(--space-sm) var(--space-md);
   transition: border-color var(--transition-fast);
 }
 

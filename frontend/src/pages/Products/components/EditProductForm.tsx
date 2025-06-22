@@ -21,6 +21,15 @@ export function EditProductForm({ product, onUpdated, onCancel }: EditProductFor
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const [iconSearch, setIconSearch] = useState('');
+
+  // Filter and sort icons based on search
+  const filteredIcons = iconSearch
+    ? Object.keys(icons)
+        .filter(name => name.toLowerCase().includes(iconSearch.toLowerCase()))
+        .sort((a, b) => a.localeCompare(b))
+        .slice(0, 20)
+    : iconNames.slice(0, 20);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +60,7 @@ export function EditProductForm({ product, onUpdated, onCancel }: EditProductFor
     }
   };
 
-  const SelectedIcon = icons[iconId as keyof typeof icons];
+  const SelectedIcon = icons[iconId as keyof typeof icons] || icons.Package;
 
   return (
     <motion.div
@@ -95,10 +104,20 @@ export function EditProductForm({ product, onUpdated, onCancel }: EditProductFor
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute z-50 top-full left-0 right-0 mt-2 p-4 bg-gray-900/95 border border-white/20 rounded-lg shadow-xl max-h-60 overflow-y-auto backdrop-blur-sm"
+                className="absolute z-50 top-full left-0 right-0 mt-2 p-4 bg-gray-900/95 border border-white/20 rounded-lg shadow-xl backdrop-blur-sm"
               >
-                <div className="grid grid-cols-4 gap-2">
-                  {iconNames.map(iconName => {
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    placeholder="Search icons..."
+                    value={iconSearch}
+                    onChange={(e) => setIconSearch(e.target.value)}
+                    className="w-full p-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:border-violet-500/50"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 gap-2 max-h-[320px] overflow-y-auto">
+                  {filteredIcons.map(iconName => {
                     const Icon = icons[iconName as keyof typeof icons];
                     return (
                       <button
@@ -107,6 +126,7 @@ export function EditProductForm({ product, onUpdated, onCancel }: EditProductFor
                         onClick={() => {
                           setIconId(iconName);
                           setShowIconPicker(false);
+                          setIconSearch('');
                         }}
                         className={`p-3 rounded-lg flex flex-col items-center gap-2 transition-all duration-200 hover:bg-white/10 ${
                           iconId === iconName ? 'bg-violet-500/20 text-violet-400' : 'text-white/70'
@@ -140,28 +160,26 @@ export function EditProductForm({ product, onUpdated, onCancel }: EditProductFor
           <label htmlFor="product-description" className="block mb-2 text-white/80 font-medium text-sm">Description</label>
           <textarea
             id="product-description"
-            placeholder="Enter product description (optional)"
+            placeholder="Enter product description"
             value={description}
             onChange={e => setDescription(e.target.value)}
-            className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40 resize-y min-h-20"
-            style={{ fontFamily: 'inherit' }}
-            rows={3}
+            className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40 min-h-[100px]"
           />
         </div>
 
         <div className="mb-6">
           <label htmlFor="product-price" className="block mb-2 text-white/80 font-medium text-sm">Price</label>
-          <div className="relative flex items-center">
-            <span className="absolute left-4 text-white/60 font-semibold pointer-events-none z-10">€</span>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40">€</span>
             <input
               id="product-price"
               type="number"
+              step="0.01"
+              min="0"
               placeholder="0.00"
               value={price}
               onChange={e => setPrice(e.target.value)}
-              min="0"
-              step="0.01"
-              className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40 pl-10"
+              className="w-full py-3 pl-10 pr-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40"
             />
           </div>
         </div>

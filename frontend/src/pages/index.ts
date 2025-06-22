@@ -4,4 +4,7 @@ export { OrderForm, OrderList } from './Orders/components';
 
 // Products
 export { ProductsPage, ProductDetailPage } from './Products';
-export { ProductForm, ProductList } from './Products/components'; 
+export { ProductForm, ProductList } from './Products/components';
+
+// Auth
+export * from './Auth'; 
