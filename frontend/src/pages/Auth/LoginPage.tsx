@@ -1,18 +1,22 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleSignInButton } from '../../components/Auth';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function LoginPage() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Only handle redirect after successful authentication
+  // Get the intended destination from the navigation state
+  const from = location.state?.from?.pathname || '/products';
+
+  // Handle redirect after successful authentication
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/products');
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, from]);
 
   return (
     <div className="page flex items-center justify-center min-h-screen p-4">
