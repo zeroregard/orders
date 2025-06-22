@@ -57,11 +57,35 @@ router.get('/', async (_req, res) => {
     console.log('Database connection successful');
     
     const products = await prisma.product.findMany({
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: {
+        orderLineItems: {
+          include: {
+            order: {
+              select: {
+                purchaseDate: true
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    // Map the products to include lastOrdered
+    const productsWithLastOrdered = products.map(product => {
+      const lastOrder = product.orderLineItems
+        .map(item => item.order.purchaseDate)
+        .sort((a, b) => b.getTime() - a.getTime())[0];
+
+      return {
+        ...product,
+        lastOrdered: lastOrder || null,
+        orderLineItems: undefined // Remove the orderLineItems from the response
+      };
     });
     
     console.log(`Successfully fetched ${products.length} products`);
-    res.json(products);
+    res.json(productsWithLastOrdered);
   } catch (error: any) {
     console.error('Detailed error fetching products:');
     console.error('Error name:', error.name);
@@ -307,14 +331,35 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     
     const product = await prisma.product.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        orderLineItems: {
+          include: {
+            order: {
+              select: {
+                purchaseDate: true
+              }
+            }
+          }
+        }
+      }
     });
     
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
+
+    const lastOrder = product.orderLineItems
+      .map(item => item.order.purchaseDate)
+      .sort((a, b) => b.getTime() - a.getTime())[0];
+
+    const productWithLastOrdered = {
+      ...product,
+      lastOrdered: lastOrder || null,
+      orderLineItems: undefined // Remove the orderLineItems from the response
+    };
     
-    res.json(product);
+    res.json(productWithLastOrdered);
   } catch (error) {
     console.error('Error fetching product:', error);
     res.status(500).json({ error: 'Failed to fetch product' });
@@ -403,48 +448,6 @@ router.get('/:id/purchase-history', async (req, res) => {
   } catch (error) {
     console.error('Error fetching purchase history:', error);
     res.status(500).json({ error: 'Failed to fetch purchase history' });
-  }
-});
-
-/**
- * @swagger
- * /api/products/{id}:
- *   get:
- *     summary: Get a product by ID
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: Product ID
- *     responses:
- *       200:
- *         description: Product found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Product'
- *       404:
- *         description: Product not found
- */
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const product = await prisma.product.findUnique({
-      where: { id }
-    });
-    
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    
-    res.json(product);
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    res.status(500).json({ error: 'Failed to fetch product' });
   }
 });
 

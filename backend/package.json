@@ -19,7 +19,10 @@
     "db:push": "prisma db push",
     "db:seed": "ts-node prisma/seed.ts",
     "db:verify": "ts-node scripts/verify-db-persistence.ts",
-    "generate:schemas": "ts-node scripts/generate-openapi.ts"
+    "generate:schemas": "ts-node scripts/generate-openapi.ts",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
@@ -50,12 +53,23 @@
     "@types/supertest": "^6.0.3",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "@typescript-eslint/eslint-plugin": "^8.34.1",
+    "@typescript-eslint/parser": "^8.34.1",
     "cross-env": "^7.0.3",
+    "eslint": "^9.29.0",
+    "husky": "^9.1.7",
     "jest": "30.0.2",
+    "lint-staged": "^16.1.2",
     "nodemon": "^3.1.10",
     "supertest": "^7.1.1",
     "ts-jest": "^29.4.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint --fix",
+      "jest --findRelatedTests --passWithNoTests"
+    ]
   }
 }
