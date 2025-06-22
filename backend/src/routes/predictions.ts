@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../services/database';
+import { calculateAverageQuantityAndConsumption } from '../models/prediction';
 
 const router = Router();
 
@@ -7,9 +8,9 @@ const router = Router();
  * @swagger
  * /api/predictions/{productId}:
  *   get:
- *     summary: Predict next purchase date for a product
+ *     summary: Predict next purchase date and recommended quantity for a product
  *     tags: [Predictions]
- *     description: Analyzes past orders to predict when a product will likely be purchased again. Requires at least 2 previous orders containing the product.
+ *     description: Analyzes past orders to predict when a product will likely be purchased again and in what quantity. Requires at least 2 previous orders containing the product.
  *     parameters:
  *       - in: path
  *         name: productId
@@ -38,10 +39,18 @@ const router = Router();
  *                 averageFrequency:
  *                   type: string
  *                   description: Average frequency of purchases
+ *                 recommendedQuantity:
+ *                   type: number
+ *                   description: Recommended quantity to purchase based on past orders
+ *                 monthlyConsumption:
+ *                   type: number
+ *                   description: Estimated monthly consumption rate
  *               example:
  *                 productId: "123e4567-e89b-12d3-a456-426614174000"
  *                 predictedPurchaseDates: ["2025-07-15", "2025-08-15", "2025-09-15"]
  *                 averageFrequency: "P1W"
+ *                 recommendedQuantity: 2
+ *                 monthlyConsumption: 4.5
  *       404:
  *         description: Not enough data to make a prediction (requires at least 2 orders)
  *         content:
@@ -58,17 +67,18 @@ router.get('/:productId', async (req, res) => {
   try {
     const { productId } = req.params;
     
-    // Find all orders containing the product
-    const relevantOrders = await prisma.order.findMany({
+    // Find all orders containing the product with their quantities
+    const relevantOrders = await prisma.orderLineItem.findMany({
       where: {
-        lineItems: {
-          some: {
-            productId: productId
-          }
-        }
+        productId: productId
+      },
+      include: {
+        order: true
       },
       orderBy: {
-        purchaseDate: 'asc'
+        order: {
+          purchaseDate: 'asc'
+        }
       }
     });
 
@@ -76,8 +86,17 @@ router.get('/:productId', async (req, res) => {
       return res.status(404).json({ error: 'Not enough data to predict next purchase' });
     }
 
+    // Transform orders for consumption analysis
+    const ordersWithQuantity = relevantOrders.map(item => ({
+      purchaseDate: item.order.purchaseDate,
+      quantity: item.quantity
+    }));
+
+    // Calculate quantity-based metrics
+    const { recommendedQuantity, monthlyConsumption } = calculateAverageQuantityAndConsumption(ordersWithQuantity);
+
     // Calculate intervals between purchases
-    const purchaseDates = relevantOrders.map((order: any) => new Date(order.purchaseDate));
+    const purchaseDates = relevantOrders.map(item => new Date(item.order.purchaseDate));
     const intervals: number[] = [];
     for (let i = 1; i < purchaseDates.length; i++) {
       intervals.push(purchaseDates[i].getTime() - purchaseDates[i - 1].getTime());
@@ -108,7 +127,9 @@ router.get('/:productId', async (req, res) => {
     res.json({
       productId,
       predictedPurchaseDates: predictions,
-      averageFrequency
+      averageFrequency,
+      recommendedQuantity,
+      monthlyConsumption
     });
   } catch (error) {
     console.error('Error predicting next purchase:', error);

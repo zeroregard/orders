@@ -85,7 +85,7 @@ const AppContent = () => {
           </div>
         </header>
       )}
-      <main className={`flex p-0 overflow-x-hidden overflow-y-auto grow shrink ${auth.isAuthenticated ? 'mb-8' : ''}`}>
+      <main className={`flex p-0 overflow-x-hidden overflow-y-auto grow shrink bg-gray-900`}>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />

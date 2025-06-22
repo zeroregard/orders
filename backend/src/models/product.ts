@@ -3,4 +3,8 @@ export interface Product {
   name: string;
   description?: string;
   price?: number;
+  iconId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  lastOrdered?: Date;
 }

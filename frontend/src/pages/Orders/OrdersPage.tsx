@@ -5,7 +5,8 @@ import { Search, Plus, Trash2, Calendar, ShoppingCart, Package } from 'lucide-re
 import { getOrders, deleteOrder } from '../../api/backend';
 import type { Order } from '../../types/backendSchemas';
 import { OrderForm } from './components/OrderForm';
-import { SkeletonCard } from '../../components';
+import { SkeletonCard, PageLayout } from '../../components';
+import { formatDate } from '../../utils/dateFormatting';
 
 export function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -68,24 +69,9 @@ export function OrdersPage() {
     return filtered;
   }, [orders, searchQuery, sortBy, sortOrder]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this order?')) return;
-    
-    try {
-      await deleteOrder(id);
-      await fetchOrders();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete order');
-    }
-  };
-
   const handleCreate = async () => {
     await fetchOrders();
     setShowForm(false);
-  };
-
-  const getTotalItems = (order: Order) => {
-    return order.lineItems.reduce((total, item) => total + item.quantity, 0);
   };
 
   if (loading) {
@@ -140,8 +126,16 @@ export function OrdersPage() {
     );
   }
 
+  if (!orders?.length) {
+    return (
+      <div className="text-gray-400 text-center py-8">
+        No orders found. Create your first order to get started!
+      </div>
+    );
+  }
+
   return (
-    <div className="page">
+    <PageLayout>
       <motion.div
         className="mb-8"
         initial={{ opacity: 0, y: -20 }}
@@ -219,57 +213,26 @@ export function OrdersPage() {
               transition={{ duration: 0.2 }}
               whileHover={{ y: -4, boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)' }}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <ShoppingCart size={20} className="text-purple-400" />
-                  <Link 
-                    to={`/orders/${order.id}`} 
-                    className="text-xl font-semibold text-white hover:text-purple-400 transition-colors"
-                  >
-                    {order.name}
-                  </Link>
-                </div>
-                <div className="flex gap-2">
-                  <motion.button
-                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
-                    onClick={() => handleDelete(order.id)}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <Trash2 size={16} />
-                  </motion.button>
-                </div>
+              <div className="flex justify-between items-center mb-4">
+                <Link 
+                  to={`/orders/${order.id}`} 
+                  className="flex items-center gap-3 text-xl font-semibold text-white hover:text-purple-400 transition-colors"
+                >
+                  <ShoppingCart size={24} className="text-purple-400" />
+                  <span className="mb-1">{order.name}</span>
+                </Link>
               </div>
 
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2 text-gray-400">
-                  <Calendar size={16} />
-                  <span className="text-sm">Created:</span>
-                  <span className="text-sm text-white">
-                    {new Date(order.createdAt || order.creationDate).toLocaleDateString()}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2 text-gray-400">
-                  <Calendar size={16} />
-                  <span className="text-sm">Purchase:</span>
-                  <span className="text-sm text-white">
-                    {new Date(order.purchaseDate).toLocaleDateString()}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2 text-gray-400">
-                  <Package size={16} />
-                  <span className="text-sm">Items:</span>
-                  <span className="text-sm text-white">
-                    {getTotalItems(order)} items ({order.lineItems.length} products)
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 text-gray-400">
+                <Calendar size={16} className="mb-[1px]" />
+                <span className="text-sm">Purchased </span>
+                <span className="text-sm">
+                  {formatDate(order.purchaseDate)}
+                </span>
               </div>
 
               {order.lineItems.length > 0 && (
-                <div className="border-t border-gray-700 pt-4">
-                  <h4 className="text-sm font-medium text-gray-300 mb-3">Line Items</h4>
+                <div className="border-t border-gray-700 pt-4 mt-4">
                   <div className="space-y-2">
                     {order.lineItems.slice(0, 3).map((item, index) => (
                       <motion.div
@@ -353,6 +316,6 @@ export function OrdersPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageLayout>
   );
 } 

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Package, Calendar, icons } from 'lucide-react';
+import { Calendar, ScatterChartIcon, icons, AlertCircle } from 'lucide-react';
 import type { Product, PurchaseHistory } from '../../api/backend';
 import { getProducts, getPurchaseHistory, getPrediction } from '../../api/backend';
 import PurchaseGraph from '../../components/Products/PurchaseGraph';
 import { DetailPageLayout, DetailCard, SkeletonCard } from '../../components';
 import { EditProductForm } from './components/EditProductForm';
 import { PurchaseCalendar } from '../../components/Products/PurchaseCalendar';
+import { formatDate } from '../../utils/dateFormatting';
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -41,22 +42,34 @@ export function ProductDetailPage() {
       setLoading(true);
       setError(null);
 
-      // Fetch all data in parallel
-      const [products, historyData, predictionData] = await Promise.all([
-        getProducts(),
-        getPurchaseHistory(id),
-        getPrediction(id)
-      ]);
-
+      // First fetch product data
+      const products = await getProducts();
       const productData = products.find(p => p.id === id);
       if (!productData) {
         throw new Error('Product not found');
       }
-
       setProduct(productData);
-      setPurchaseHistory(historyData);
-      setPredictedDates(predictionData.predictedPurchaseDates);
-      setAverageFrequency(predictionData.averageFrequency);
+
+      try {
+        // Try to fetch purchase history
+        const historyData = await getPurchaseHistory(id);
+        setPurchaseHistory(historyData);
+
+        // Only try to get predictions if we have purchase history
+        if (historyData.purchases.length > 0) {
+          try {
+            const predictionData = await getPrediction(id);
+            setPredictedDates(predictionData.predictedPurchaseDates);
+            setAverageFrequency(predictionData.averageFrequency);
+          } catch (predErr) {
+            console.log('No predictions available:', predErr);
+            // Don't set error state, just leave predictions null
+          }
+        }
+      } catch (historyErr) {
+        console.log('No purchase history available:', historyErr);
+        // Don't set error state, just leave history null
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -120,27 +133,25 @@ export function ProductDetailPage() {
               </div>
             </div>
             <div className="flex flex-col md:flex-row gap-2 md:gap-8 text-sm text-gray-400 mt-4">
-              <p>Created: {new Date(product.createdAt).toLocaleDateString()}</p>
-              <p>Last Updated: {new Date(product.updatedAt).toLocaleDateString()}</p>
+              <p>Created: {formatDate(product.createdAt)}</p>
+              <p>Last Updated: {formatDate(product.updatedAt)}</p>
             </div>
           </DetailCard>
 
-          <DetailCard
-            title="Purchase Calendar"
-            icon={Calendar}
-            className="mb-8"
-          >
-            {purchaseHistory && (
-              <PurchaseCalendar purchaseHistory={purchaseHistory} />
-            )}
-          </DetailCard>
+          {purchaseHistory?.purchases.length ? (
+            <>
+              <DetailCard
+                title="Purchase Calendar"
+                icon={Calendar}
+                className="mb-8"
+              >
+                <PurchaseCalendar purchaseHistory={purchaseHistory} />
+              </DetailCard>
 
-          <DetailCard
-            title="Purchase History & Prediction"
-            icon={Package}
-          >
-            {purchaseHistory && (
-              <>
+              <DetailCard
+                title="Purchase Heatmap & Prediction"
+                icon={ScatterChartIcon}
+              >
                 <PurchaseGraph
                   purchaseHistory={purchaseHistory}
                   predictedDates={predictedDates || undefined}
@@ -152,21 +163,32 @@ export function ProductDetailPage() {
                 )}
                 {predictedDates && predictedDates.length > 0 && (
                   <div className="mt-6 p-4 bg-violet-500/10 rounded-lg text-violet-400 font-medium">
-                    <p className="text-center mb-2">Next predicted purchases:</p>
+                    <p className="text-center mb-2">Next predicted purchase:</p>
                     <div className="flex flex-col gap-2">
                       {predictedDates
                         .filter(date => new Date(date).getFullYear() === new Date().getFullYear())
-                        .map((date, index) => (
+                        .map((date) => (
                           <p key={date} className="text-center">
-                            {index + 1}. {new Date(date).toLocaleDateString()}
+                            {formatDate(date)}
                           </p>
-                        ))}
+                        ))[0]
+                      }
                     </div>
                   </div>
                 )}
-              </>
-            )}
-          </DetailCard>
+              </DetailCard>
+            </>
+          ) : (
+            <DetailCard className="mb-8">
+              <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                <AlertCircle size={32} className="mb-4 text-violet-400/50" />
+                <p className="text-lg font-medium mb-2">No Purchase History</p>
+                <p className="text-sm text-center">
+                  This product hasn't been purchased yet. Purchase history and predictions will appear here once orders are made.
+                </p>
+              </div>
+            </DetailCard>
+          )}
         </>
       )}
     </DetailPageLayout>

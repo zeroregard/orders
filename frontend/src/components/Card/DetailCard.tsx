@@ -16,7 +16,7 @@ export function DetailCard({
   children
 }: DetailCardProps) {
   return (
-    <div className={`bg-white/5 border border-white/20 rounded-2xl p-6 ${className}`}>
+    <div className={`bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-purple-500/50 transition-colors ${className}`}>
       {(title || icon) && (
         <div className="mb-6">
           <Title icon={icon}>{title}</Title>

@@ -11,14 +11,19 @@ interface DayData {
   date: string;
   quantity: number;
   isPredicted: boolean;
-  month: number; // Add month to track which month each day belongs to
+  month: number;
 }
 
 const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predictedDates }) => {
   const [days, setDays] = useState<DayData[]>([]);
-  const [currentYearPredictions, setCurrentYearPredictions] = useState<string[]>([]);
 
   useEffect(() => {
+    // Filter predicted dates for current year
+    const currentYear = new Date().getFullYear();
+    const currentYearPredictions = predictedDates?.filter(date => 
+      new Date(date).getFullYear() === currentYear
+    ) || [];
+
     // Get current year's start and end dates
     const now = new Date();
     const startDate = new Date(now.getFullYear(), 0, 1);
@@ -31,7 +36,7 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
     while (currentDate <= endDate) {
       const dateStr = currentDate.toISOString().split('T')[0];
       const purchase = purchaseHistory.purchases.find(p => p.date === dateStr);
-      const isPredicted = currentYearPredictions?.includes(dateStr) ?? false;
+      const isPredicted = currentYearPredictions.includes(dateStr);
 
       allDays.push({
         date: dateStr,
@@ -44,13 +49,7 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
     }
 
     setDays(allDays);
-  }, [purchaseHistory, predictedDates, currentYearPredictions]);
-
-  useEffect(() => {
-    setCurrentYearPredictions(
-      predictedDates?.filter(date => new Date(date).getFullYear() === new Date().getFullYear()) || []
-    );
-  }, [predictedDates, currentYearPredictions]);
+  }, [purchaseHistory, predictedDates]);
 
   // Calculate color intensity based on quantity
   const getColorStyle = (quantity: number, isPredicted: boolean) => {
@@ -65,7 +64,7 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
     if (isPredicted) {
       return {
         backgroundColor: 'transparent',
-        borderColor: '#7c4dff',
+        borderColor: '#ffb24d',
         bordeStyle: 'solid',
         borderWidth: '1px'
       };
@@ -93,11 +92,11 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
   const bottomMonths = months.slice(6);
 
   const renderMonthLabels = (monthsToRender: string[]) => (
-    <div className="flex mb-2 p">
+    <div className="flex mb-1 text-xs sm:text-sm">
       {monthsToRender.map((month, index) => (
         <div 
           key={month} 
-          className="month-label !text-left p-1 rounded-md"
+          className="month-label !text-left p-0.5 sm:p-1 rounded-md"
           style={{
             backgroundColor: index % 2 === 1 ? 'rgba(255, 255, 255, 0.05)' : 'transparent'
           }}
@@ -115,14 +114,13 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
     );
 
     return (
-      <div className="flex flex-row gap-1 w-full">
+      <div className="flex flex-row w-full">
         {rowWeeks.map((week, weekIndex) => (
           <div 
             key={weekIndex} 
-            className="week flex flex-col gap-1" 
+            className="week flex flex-col"
             style={{
               flexGrow: 1,
-              padding: '1px'
             }}
           >
             {week.map(day => {
@@ -141,12 +139,12 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
               return (
                 <div
                   key={day.date}
-                  className="border w-full min-w-full aspect-square rounded border-white/10"
+                  className="border w-full min-w-full aspect-square border-white/10 text-[0.5rem] sm:text-xs"
                   style={{
                     ...colorStyle,
                     ...monthStyle
                   }}
-                  title={`${day.date}: ${day.quantity} ${day.quantity === 1 ? 'purchase' : 'purchases'}`}
+                  title={day.quantity > 0 ? `x${day.quantity}` : undefined}
                 />
               );
             })}
@@ -157,7 +155,7 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2 sm:gap-4 max-w-[600px]">
       <div>
         {renderMonthLabels(topMonths)}
         {renderWeeksRow(0, 5)}

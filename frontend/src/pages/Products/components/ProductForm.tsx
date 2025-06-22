@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Package, icons } from 'lucide-react';
+import { X, icons } from 'lucide-react';
 import { createProduct } from '../../../api/backend';
 import type { CreateProductRequest } from '../../../types/backendSchemas';
 
@@ -9,6 +9,8 @@ interface ProductFormProps {
   onCancel?: () => void;
 }
 
+// Get all icon names from Lucide
+const iconNames = Object.keys(icons).sort();
 
 export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
   const [name, setName] = useState('');
@@ -26,7 +28,7 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
         .filter(name => name.toLowerCase().includes(iconSearch.toLowerCase()))
         .sort((a, b) => a.localeCompare(b))
         .slice(0, 20)
-    : [];
+    : iconNames.slice(0, 20);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,50 +68,44 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
   const SelectedIcon = icons[iconId as keyof typeof icons];
 
   return (
-    <motion.div
-      className="w-full max-w-none"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <Package size={24} className="text-violet-400" />
-          <h3 className="m-0 text-white text-xl font-semibold">Add New Product</h3>
-        </div>
-        {onCancel && (
-          <motion.button
-            type="button"
-            className="flex items-center justify-center w-9 h-9 bg-white/10 border border-white/20 rounded-lg text-white/70 cursor-pointer transition-all duration-200 flex-shrink-0 hover:bg-white/20 hover:text-white"
-            onClick={handleCancel}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <X size={20} />
-          </motion.button>
-        )}
+    <div className="relative">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-white">Create Product</h2>
+        <button
+          onClick={handleCancel}
+          className="p-2 text-gray-400 hover:text-white rounded-lg transition-colors"
+        >
+          <X size={20} />
+        </button>
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="relative">
+          <label className="block mb-2 text-white/80 font-medium text-sm">Icon</label>
           <button
             type="button"
             onClick={() => setShowIconPicker(!showIconPicker)}
-            className="w-full p-4 bg-white/5 border border-white/20 rounded-lg text-white flex items-center gap-3 hover:bg-white/8 transition-all duration-200"
+            className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 flex items-center gap-3"
           >
-            <SelectedIcon size={24} />
-            <span className="flex-1 text-left">{iconId}</span>
+            <SelectedIcon size={20} />
+            <span>{iconId}</span>
           </button>
 
           <AnimatePresence>
             {showIconPicker && (
               <motion.div
-                className="absolute top-full left-0 right-0 mt-2 p-4 bg-gray-800 border border-white/20 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
+                className="fixed inset-x-4 bottom-4 sm:absolute sm:inset-auto sm:top-full sm:left-0 sm:right-0 sm:mt-2 p-4 bg-gray-900/95 border border-white/20 rounded-lg shadow-xl backdrop-blur-sm z-50 max-h-[80vh] sm:max-h-[320px] overflow-y-auto"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
               >
-                <div className="mb-4">
+                <div className="sticky top-0 bg-gray-900/95 pb-4 backdrop-blur-sm">
                   <input
                     type="text"
                     placeholder="Search icons..."
@@ -118,9 +114,8 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
                     className="w-full p-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:border-violet-500/50"
                   />
                 </div>
-                
-                {iconSearch ? (
-                  <div className="grid grid-cols-4 gap-2">
+                <div className="grow shrink overflow-clip">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 overflow-y-auto">
                     {filteredIcons.map(iconName => {
                       const Icon = icons[iconName as keyof typeof icons];
                       return (
@@ -137,14 +132,16 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
                           }`}
                         >
                           <Icon size={20} />
-                          <span className="text-xs truncate w-full text-center">{iconName}</span>
+                          <span className="text-xs text-center break-all line-clamp-2 px-1">{iconName}</span>
                         </button>
                       );
                     })}
                   </div>
-                ) : (
+                </div>
+
+                {filteredIcons.length === 0 && (
                   <p className="text-center text-white/40 py-4">
-                    Type to search for icons...
+                    No icons found. Try a different search.
                   </p>
                 )}
               </motion.div>
@@ -152,7 +149,7 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
           </AnimatePresence>
         </div>
 
-        <div className="mb-6">
+        <div>
           <label htmlFor="product-name" className="block mb-2 text-white/80 font-medium text-sm">Product Name *</label>
           <input
             id="product-name"
@@ -165,74 +162,49 @@ export function ProductForm({ onCreated, onCancel }: ProductFormProps) {
           />
         </div>
 
-        <div className="mb-6">
+        <div>
           <label htmlFor="product-description" className="block mb-2 text-white/80 font-medium text-sm">Description</label>
           <textarea
             id="product-description"
-            placeholder="Enter product description (optional)"
+            placeholder="Enter product description"
             value={description}
             onChange={e => setDescription(e.target.value)}
-            className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40 resize-y min-h-20"
-            style={{ fontFamily: 'inherit' }}
             rows={3}
+            className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40"
           />
         </div>
 
-        <div className="mb-6">
+        <div>
           <label htmlFor="product-price" className="block mb-2 text-white/80 font-medium text-sm">Price</label>
-          <div className="relative flex items-center">
-            <span className="absolute left-4 text-white/60 font-semibold pointer-events-none z-10">€</span>
-            <input
-              id="product-price"
-              type="number"
-              placeholder="0.00"
-              value={price}
-              onChange={e => setPrice(e.target.value)}
-              min="0"
-              step="0.01"
-              className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40 pl-10"
-            />
-          </div>
+          <input
+            id="product-price"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="Enter price"
+            value={price}
+            onChange={e => setPrice(e.target.value)}
+            className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 placeholder:text-white/40"
+          />
         </div>
 
-        {error && (
-          <motion.div
-            className="text-red-400/90 text-sm"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
+        <div className="flex gap-4 justify-end pt-4">
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/20 rounded-lg font-medium transition-colors"
           >
-            {error}
-          </motion.div>
-        )}
-
-        <div className="flex gap-4 mt-8 justify-end flex-wrap">
-          {onCancel && (
-            <motion.button
-              type="button"
-              className="py-3 px-6 bg-white/10 border border-white/20 rounded-lg text-white/80 font-medium cursor-pointer transition-all duration-200 min-w-30 hover:bg-white/15 hover:text-white"
-              onClick={handleCancel}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Cancel
-            </motion.button>
-          )}
-          <motion.button
+            Cancel
+          </button>
+          <button
             type="submit"
-            disabled={loading || !name.trim()}
-            className="py-3 px-6 border-0 rounded-lg text-white font-semibold cursor-pointer transition-all duration-200 min-w-36 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
-            style={{
-              background: 'linear-gradient(135deg, #8b5cf6, #a855f7)',
-              boxShadow: '0 4px 14px rgba(139, 92, 246, 0.3)'
-            }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            disabled={loading}
+            className="px-6 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating...' : 'Create Product'}
-          </motion.button>
+          </button>
         </div>
       </form>
-    </motion.div>
+    </div>
   );
 }

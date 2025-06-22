@@ -82,4 +82,8 @@ public
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
 
+# Ignore backups directory
+/backups/
+/backups/*
+
 /src/generated/prisma

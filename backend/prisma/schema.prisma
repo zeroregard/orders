@@ -17,6 +17,7 @@ model Product {
   updatedAt         DateTime          @updatedAt
   orderLineItems    OrderLineItem[]
   purchasePatterns  PurchasePattern[]
+  lastOrdered       DateTime?
 
   @@map("products")
 }

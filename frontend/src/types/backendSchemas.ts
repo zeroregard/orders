@@ -13,3 +13,14 @@ export type {
   AuthTestResponse,
   ApiError
 } from '../../../shared/schemas/api-types';
+
+export interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  price?: number;
+  iconId?: string;
+  createdAt: string;
+  updatedAt: string;
+  lastOrdered?: string;
+}

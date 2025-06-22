@@ -1,17 +1,14 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Package, icons } from 'lucide-react';
 import { updateProduct } from '../../../api/backend';
 import type { Product, UpdateProductRequest } from '../../../types/backendSchemas';
+import { IconPicker } from '../../../components/Products/IconPicker';
 
 interface EditProductFormProps {
   product: Product;
   onUpdated?: () => void;
   onCancel?: () => void;
 }
-
-// Get all icon names from Lucide
-const iconNames = Object.keys(icons).sort();
 
 export function EditProductForm({ product, onUpdated, onCancel }: EditProductFormProps) {
   const [name, setName] = useState(product.name);
@@ -20,16 +17,6 @@ export function EditProductForm({ product, onUpdated, onCancel }: EditProductFor
   const [iconId, setIconId] = useState(product.iconId || 'Package');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showIconPicker, setShowIconPicker] = useState(false);
-  const [iconSearch, setIconSearch] = useState('');
-
-  // Filter and sort icons based on search
-  const filteredIcons = iconSearch
-    ? Object.keys(icons)
-        .filter(name => name.toLowerCase().includes(iconSearch.toLowerCase()))
-        .sort((a, b) => a.localeCompare(b))
-        .slice(0, 20)
-    : iconNames.slice(0, 20);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,87 +47,22 @@ export function EditProductForm({ product, onUpdated, onCancel }: EditProductFor
     }
   };
 
-  const SelectedIcon = icons[iconId as keyof typeof icons] || icons.Package;
-
   return (
-    <motion.div
-      className="w-full max-w-none"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <Package size={24} className="text-violet-400" />
-          <h3 className="m-0 text-white text-xl font-semibold">Edit Product</h3>
-        </div>
-        {onCancel && (
-          <motion.button
-            type="button"
-            className="flex items-center justify-center w-9 h-9 bg-white/10 border border-white/20 rounded-lg text-white/70 cursor-pointer transition-all duration-200 flex-shrink-0 hover:bg-white/20 hover:text-white"
-            onClick={handleCancel}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <X size={20} />
-          </motion.button>
-        )}
+    <div className="relative">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-white">Edit Product</h2>
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <div className="mb-6">
           <label className="block mb-2 text-white/80 font-medium text-sm">Icon</label>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowIconPicker(!showIconPicker)}
-              className="w-full py-3 px-4 bg-white/5 border border-white/20 rounded-lg text-white text-base transition-all duration-200 box-border focus:outline-none focus:border-violet-500/50 focus:bg-white/8 focus:ring-2 focus:ring-violet-500/10 flex items-center gap-3"
-            >
-              <SelectedIcon size={20} />
-              <span>{iconId}</span>
-            </button>
-            {showIconPicker && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="absolute z-50 top-full left-0 right-0 mt-2 p-4 bg-gray-900/95 border border-white/20 rounded-lg shadow-xl backdrop-blur-sm"
-              >
-                <div className="mb-4">
-                  <input
-                    type="text"
-                    placeholder="Search icons..."
-                    value={iconSearch}
-                    onChange={(e) => setIconSearch(e.target.value)}
-                    className="w-full p-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder:text-white/40 focus:outline-none focus:border-violet-500/50"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-4 gap-2 max-h-[320px] overflow-y-auto">
-                  {filteredIcons.map(iconName => {
-                    const Icon = icons[iconName as keyof typeof icons];
-                    return (
-                      <button
-                        key={iconName}
-                        type="button"
-                        onClick={() => {
-                          setIconId(iconName);
-                          setShowIconPicker(false);
-                          setIconSearch('');
-                        }}
-                        className={`p-3 rounded-lg flex flex-col items-center gap-2 transition-all duration-200 hover:bg-white/10 ${
-                          iconId === iconName ? 'bg-violet-500/20 text-violet-400' : 'text-white/70'
-                        }`}
-                      >
-                        <Icon size={20} />
-                        <span className="text-xs truncate w-full text-center">{iconName}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </div>
+          <IconPicker selectedIcon={iconId} onIconSelect={setIconId} />
         </div>
 
         <div className="mb-6">
@@ -184,17 +106,6 @@ export function EditProductForm({ product, onUpdated, onCancel }: EditProductFor
           </div>
         </div>
 
-        {error && (
-          <motion.div
-            className="text-red-400/90 text-sm"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            {error}
-          </motion.div>
-        )}
-
         <div className="flex gap-4 mt-8 justify-end flex-wrap">
           {onCancel && (
             <motion.button
@@ -222,6 +133,6 @@ export function EditProductForm({ product, onUpdated, onCancel }: EditProductFor
           </motion.button>
         </div>
       </form>
-    </motion.div>
+    </div>
   );
 } 

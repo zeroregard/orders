@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, Trash2, Edit, Calendar, DollarSign } from 'lucide-react';
-import { getProducts, deleteProduct } from '../../api/backend';
+import { Search, Plus, Calendar, icons } from 'lucide-react';
+import { getProducts } from '../../api/backend';
 import type { Product } from '../../types/backendSchemas';
 import { ProductForm } from './components/ProductForm';
-import { SkeletonCard } from '../../components';
+import { SkeletonCard, PageLayout } from '../../components';
+import React from 'react';
+import { formatDate } from '../../utils/dateFormatting';
 
 export function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -69,17 +71,6 @@ export function ProductsPage() {
     return filtered;
   }, [products, searchQuery, sortBy, sortOrder]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-    
-    try {
-      await deleteProduct(id);
-      await fetchProducts();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete product');
-    }
-  };
-
   const handleCreate = async () => {
     await fetchProducts();
     setShowForm(false);
@@ -87,7 +78,7 @@ export function ProductsPage() {
 
   if (loading) {
     return (
-      <div className="page">
+      <PageLayout>
         <motion.div
           className="mb-8"
           initial={{ opacity: 0, y: -20 }}
@@ -123,22 +114,22 @@ export function ProductsPage() {
         >
           <SkeletonCard variant="list" count={6} />
         </motion.div>
-      </div>
+      </PageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="page">
+      <PageLayout>
         <div className="flex items-center justify-center h-64">
           <div className="text-red-400 text-lg">{error}</div>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="page">
+    <PageLayout>
       <motion.div
         className="mb-8"
         initial={{ opacity: 0, y: -20 }}
@@ -216,48 +207,30 @@ export function ProductsPage() {
               transition={{ duration: 0.2 }}
               whileHover={{ y: -4, boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)' }}
             >
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex justify-between items-center">
                 <Link 
                   to={`/products/${product.id}`} 
-                  className="text-xl font-semibold text-white hover:text-purple-400 transition-colors"
+                  className="flex mb-2 items-center gap-3 text-xl font-semibold text-white hover:text-purple-400 transition-colors"
                 >
-                  {product.name}
+                  {React.createElement(icons[product.iconId as keyof typeof icons] || icons.Package, { 
+                    size: 24,
+                    className: "text-purple-400"
+                  })}
+                  <span className="mb-1">{product.name}</span>
+
                 </Link>
-                <div className="flex gap-2">
-                  <motion.button
-                    className="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-700 rounded-lg transition-colors"
-                    onClick={() => {/* TODO: Implement edit */}}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <Edit size={16} />
-                  </motion.button>
-                  <motion.button
-                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
-                    onClick={() => handleDelete(product.id)}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <Trash2 size={16} />
-                  </motion.button>
-                </div>
               </div>
 
-              {product.description && (
-                <p className="text-gray-300 mb-4 line-clamp-3">{product.description}</p>
-              )}
-
               <div className="flex flex-col gap-2">
-                {product.price != null && (
-                  <div className="flex items-center gap-2 text-green-400">
-                    <DollarSign size={16} />
-                    <span className="font-medium">${product.price.toFixed(2)}</span>
-                  </div>
-                )}
-                {product.createdAt && (
+                {product.lastOrdered ? (
                   <div className="flex items-center gap-2 text-gray-400">
                     <Calendar size={16} />
-                    <span className="text-sm">{new Date(product.createdAt).toLocaleDateString()}</span>
+                    <span className="text-sm">Last ordered: {formatDate(product.lastOrdered)}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-gray-400">
+                    <Calendar size={16} />
+                    <span className="text-sm">Never ordered</span>
                   </div>
                 )}
               </div>
@@ -308,6 +281,6 @@ export function ProductsPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageLayout>
   );
 } 
