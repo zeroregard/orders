@@ -1,9 +1,10 @@
 # RFC: Email-Based Order Parsing System
 
-**Status:** Draft  
+**Status:** Accepted  
 **Author:** Auto-Order Team  
 **Created:** January 2025  
 **Last Updated:** January 2025  
+**Approved:** January 2025  
 
 ## Table of Contents
 
@@ -62,7 +63,11 @@ Currently, users must manually create orders and add products through the web in
 ### Functional Requirements
 
 1. **Email Ingestion**
-   - Accept emails from specific sender addresses only
+   - Accept emails from specific sender addresses only:
+     - ajprameswari@gmail.com
+     - mathiasxaj@gmail.com
+     - mathiassiig@gmail.com
+     - mathias_sn@hotmail.com
    - Process various email formats (HTML, plain text, with attachments)
    - Extract receipt content from email body and attachments
 
@@ -72,14 +77,14 @@ Currently, users must manually create orders and add products through the web in
    - Support multiple languages (initially English)
 
 3. **Product Management**
-   - Match parsed items to existing products
+   - Match parsed items to existing products using LLM
    - Create new products when no match is found
    - Handle product variations and similar names
 
 4. **Draft Order System**
    - Create orders in "draft" status by default
    - Allow users to review and approve drafts
-   - Prevent automatic creation of non-draft orders
+   - Convert existing orders to non-draft (isDraft: false)
 
 5. **Deduplication**
    - Use email content hash as unique identifier
@@ -108,19 +113,9 @@ Currently, users must manually create orders and add products through the web in
 ### High-Level Architecture
 
 ```
-Email Provider (Railway/Vercel) → Email Webhook → Processing Service → LLM API → Database
-                                       ↓
-                                  Email Storage
-                                       ↓
-                              Deduplication Check
-                                       ↓
-                              Content Extraction
-                                       ↓
-                              LLM Processing
-                                       ↓
-                              Product Matching
-                                       ↓
-                              Draft Order Creation
+Email Provider → Email Webhook → Processing Service → LLM API → Database
+     ↓               ↓                ↓               ↓         ↓
+Mailgun/Railway  Railway Function  Email Storage  Gemini    PostgreSQL
 ```
 
 ### Component Breakdown
@@ -136,7 +131,7 @@ Email Provider (Railway/Vercel) → Email Webhook → Processing Service → LLM
    - Maintains processing state
 
 3. **LLM Service**
-   - Interfaces with chosen LLM provider
+   - Interfaces with Google Gemini Flash 2.0
    - Handles prompt engineering and response parsing
    - Manages token usage and costs
 
@@ -155,13 +150,14 @@ Email Provider (Railway/Vercel) → Email Webhook → Processing Service → LLM
 ### Phase 1: Core Infrastructure (Week 1-2)
 
 1. **Database Schema Updates**
-   - Add `isDraft` field to Order model
+   - Add `isDraft` field to Order model (default: true)
    - Create `EmailProcessingLog` table
    - Add `source` and `originalEmailHash` fields to Order
+   - Migrate existing orders to isDraft: false
 
 2. **Email Service Integration**
-   - Research and implement Railway/Vercel email handling
-   - Set up webhook endpoint
+   - Set up Mailgun with Railway webhook
+   - Create webhook endpoint
    - Implement basic email parsing
 
 3. **Basic Processing Pipeline**
@@ -171,13 +167,13 @@ Email Provider (Railway/Vercel) → Email Webhook → Processing Service → LLM
 
 ### Phase 2: LLM Integration (Week 3-4)
 
-1. **LLM Provider Selection and Setup**
-   - Implement OpenAI GPT-4o-mini integration (most cost-effective)
+1. **LLM Provider Setup**
+   - Implement Google Gemini Flash 2.0 integration
    - Create prompt templates for order parsing
    - Implement response validation
 
 2. **Product Matching Engine**
-   - Implement fuzzy matching algorithms
+   - Implement LLM-based product matching
    - Create product similarity scoring
    - Handle product creation workflow
 
@@ -261,6 +257,33 @@ enum OrderSource {
 }
 ```
 
+### Migration Script
+
+```sql
+-- Add new fields to orders table
+ALTER TABLE orders ADD COLUMN "isDraft" BOOLEAN DEFAULT true;
+ALTER TABLE orders ADD COLUMN "source" TEXT DEFAULT 'MANUAL';
+ALTER TABLE orders ADD COLUMN "originalEmailHash" TEXT;
+
+-- Set existing orders to non-draft
+UPDATE orders SET "isDraft" = false WHERE "createdAt" < NOW();
+
+-- Create email processing logs table
+CREATE TABLE email_processing_logs (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+  "emailHash" TEXT UNIQUE NOT NULL,
+  "senderEmail" TEXT NOT NULL,
+  subject TEXT,
+  "rawContent" TEXT NOT NULL,
+  status TEXT NOT NULL,
+  "errorMessage" TEXT,
+  "orderId" TEXT,
+  "processedAt" TIMESTAMP,
+  "createdAt" TIMESTAMP DEFAULT NOW(),
+  "updatedAt" TIMESTAMP DEFAULT NOW()
+);
+```
+
 ## API Endpoints
 
 ### New Endpoints
@@ -268,7 +291,7 @@ enum OrderSource {
 ```typescript
 // Email webhook endpoint
 POST /api/webhooks/email
-// Processes incoming emails from email service
+// Processes incoming emails from Mailgun
 
 // Draft order management
 GET /api/orders/drafts
@@ -296,68 +319,81 @@ POST /api/email-processing/:hash/retry
 ```typescript
 // Update existing order endpoints to handle drafts
 GET /api/orders
-// Add query parameter: ?includeDrafts=true
+// Add query parameter: ?includeDrafts=true&draftsOnly=false
 
 POST /api/orders
-// Add optional isDraft parameter
+// Add optional isDraft parameter (default: false for manual orders)
 ```
 
 ## Email Service Integration
 
-### Research Findings
-
-After researching Railway and Vercel capabilities:
-
-#### Railway Email Handling
-- **Railway Email Agent Template**: Available template for email processing
-- **Webhook Support**: Can receive email webhooks via HTTP endpoints
-- **Cost**: Function-based pricing, pay per execution
-- **Setup**: Requires external email service integration (e.g., SendGrid, Mailgun)
-
-#### Vercel Email Handling
-- **Serverless Functions**: Can process email webhooks
-- **No Native Email**: Requires third-party email service
-- **Integration Options**: SendGrid, Mailgun, Postmark webhooks
-- **Cost**: Function execution time based
-
 ### Recommended Approach: Railway + Mailgun
 
-**Rationale:**
-1. Railway has better webhook handling for background jobs
-2. Mailgun provides reliable email parsing and routing
-3. Cost-effective for expected volume
-4. Good documentation and community support
-
 **Setup Process:**
-1. Configure Mailgun subdomain: `orders.yourdomain.com`
-2. Set up email routing to Railway webhook
-3. Configure sender allowlist
-4. Implement webhook validation
+
+1. **Mailgun Configuration**
+   ```
+   Domain: orders.yourdomain.com
+   Route: Match recipient "receipts@orders.yourdomain.com"
+   Action: Forward to webhook https://your-railway-app.railway.app/api/webhooks/email
+   ```
+
+2. **Railway Webhook Implementation**
+   ```typescript
+   // backend/src/routes/webhooks/email.ts
+   import { Router } from 'express';
+   import crypto from 'crypto';
+   
+   const router = Router();
+   
+   router.post('/email', async (req, res) => {
+     // Verify Mailgun signature
+     const signature = crypto
+       .createHmac('sha256', process.env.MAILGUN_WEBHOOK_SECRET!)
+       .update(req.body.timestamp + req.body.token)
+       .digest('hex');
+   
+     if (signature !== req.body.signature) {
+       return res.status(401).json({ error: 'Invalid signature' });
+     }
+   
+     // Check sender whitelist
+     const allowedSenders = [
+       'ajprameswari@gmail.com',
+       'mathiasxaj@gmail.com', 
+       'mathiassiig@gmail.com',
+       'mathias_sn@hotmail.com'
+     ];
+   
+     if (!allowedSenders.includes(req.body.sender)) {
+       return res.status(403).json({ error: 'Sender not allowed' });
+     }
+   
+     // Queue email for processing
+     await queueEmailProcessing(req.body);
+     
+     res.status(200).json({ status: 'queued' });
+   });
+   ```
+
+3. **Cost Breakdown**
+   - Mailgun: $0-35/month (0-50K emails)
+   - Railway: $5-20/month (based on usage)
+   - Total: $5-55/month
 
 ## LLM Integration
 
-### Provider Analysis
+### Provider Selection: Google Gemini Flash 2.0
 
-Based on cost research, here are the most cost-effective options for receipt parsing:
-
-| Provider | Model | Input ($/1M tokens) | Output ($/1M tokens) | Best For |
-|----------|-------|-------------------|---------------------|-----------|
-| OpenAI | GPT-4o-mini | $0.15 | $0.60 | General parsing |
-| Google | Gemini Flash 2.0 | $0.075 | $0.30 | Cost optimization |
-| Anthropic | Claude 3.5 Haiku | $0.80 | $4.00 | Accuracy critical |
-| DeepSeek | DeepSeek-V3 | $0.27 | $1.10 | Good balance |
-
-### Recommended Choice: Google Gemini Flash 2.0
-
-**Reasoning:**
-- Lowest cost per token
-- 1M context window (handles long receipts)
-- Good performance for structured data extraction
-- 50-75% cost savings vs GPT-4o-mini
+**Cost Analysis:**
+- Input: $0.075 per 1M tokens
+- Output: $0.30 per 1M tokens  
+- Context window: 1M tokens
+- **Most cost-effective option** (50-75% cheaper than alternatives)
 
 **Estimated Costs:**
 - Average receipt: ~1,000 input tokens, ~200 output tokens
-- Cost per receipt: ~$0.00015 (vs $0.00027 for GPT-4o-mini)
+- Cost per receipt: ~$0.00015
 - 100 receipts/day: ~$0.015/day (~$5.50/year)
 
 ### Prompt Engineering
@@ -372,9 +408,10 @@ INSTRUCTIONS:
 2. Identify the store/merchant name
 3. Extract the purchase date
 4. Return data in the specified JSON format
-5. If information is unclear, mark fields as null
+5. For product matching, consider existing products and suggest matches
+6. If unsure about a match, suggest creating a new product
 
-EXISTING PRODUCTS:
+EXISTING PRODUCTS (for matching):
 ${JSON.stringify(existingProducts, null, 2)}
 
 RECEIPT CONTENT:
@@ -404,213 +441,223 @@ REQUIRED OUTPUT FORMAT:
   "currency": "USD"
 }
 
-Respond ONLY with valid JSON. No additional text or explanation.
+Respond ONLY with valid JSON. No additional text.
 `;
 ```
 
-### Product Matching Logic
+### Implementation
 
 ```typescript
-interface ProductMatchingService {
-  async matchProducts(items: ParsedItem[], existingProducts: Product[]): Promise<MatchResult[]>;
-}
+// backend/src/services/llmService.ts
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-interface MatchResult {
-  parsedItem: ParsedItem;
-  matchedProduct?: Product;
-  confidence: number;
-  shouldCreateNew: boolean;
-  suggestedProduct?: Partial<Product>;
-}
+export class LLMService {
+  private genAI: GoogleGenerativeAI;
 
-// Matching algorithm:
-// 1. Exact name match (confidence: 1.0)
-// 2. Fuzzy string matching (confidence: 0.7-0.9)
-// 3. Keyword extraction and matching (confidence: 0.5-0.7)
-// 4. LLM-suggested match validation (confidence: based on LLM)
-// 5. Create new product if confidence < 0.6
+  constructor() {
+    this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+  }
+
+  async parseReceipt(emailContent: string, existingProducts: Product[]): Promise<ParsedReceipt> {
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    
+    const prompt = RECEIPT_PARSING_PROMPT
+      .replace('${existingProducts}', JSON.stringify(existingProducts, null, 2))
+      .replace('${receiptContent}', emailContent);
+
+    const result = await model.generateContent(prompt);
+    const response = result.response.text();
+    
+    try {
+      return JSON.parse(response);
+    } catch (error) {
+      throw new Error(`Invalid JSON response from LLM: ${response}`);
+    }
+  }
+}
 ```
 
 ## Cost Analysis
 
 ### Initial Setup Costs
-- Mailgun account: $0-35/month (based on volume)
-- Railway hosting: $5-20/month
+- Mailgun account setup: $0
+- Railway hosting setup: $0
+- Google AI API setup: $0
 - Development time: ~3-4 weeks
 
-### Ongoing Operational Costs
+### Monthly Operational Costs (100 emails/day)
 
-**Email Processing (100 emails/day):**
-- Mailgun: $0-5/month
-- Railway functions: $2-5/month
-- LLM processing: $5.50/year (Gemini Flash)
-
-**Total Monthly Cost: $7-45**
+| Component | Cost | Notes |
+|-----------|------|-------|
+| Mailgun | $0-35/month | Free tier: 5K emails |
+| Railway Functions | $5-20/month | Based on execution time |
+| Google Gemini API | $0.45/month | ~$5.50/year |
+| **Total** | **$5-55/month** | Scales with volume |
 
 ### Cost Optimization Strategies
-1. **Caching**: Cache product lists to reduce LLM context size
-2. **Batch Processing**: Process multiple emails together
-3. **Smart Parsing**: Only use LLM for complex receipts
-4. **Fallback Models**: Use cheaper models for simple receipts
+
+1. **Prompt Optimization**: Reduce token usage by 30-50%
+2. **Product Caching**: Cache product lists, update daily
+3. **Batch Processing**: Process multiple emails together
+4. **Intelligent Routing**: Use simpler parsing for standard formats
 
 ## Security Considerations
 
 ### Email Security
-- **Sender Validation**: Only accept emails from allowlisted addresses
-- **Content Sanitization**: Strip potentially malicious content
-- **Rate Limiting**: Prevent spam and abuse
-- **Webhook Validation**: Verify webhook signatures
+- **Sender Validation**: Hardcoded allowlist of 4 email addresses
+- **Signature Verification**: Validate Mailgun webhook signatures
+- **Content Sanitization**: Strip HTML, validate content
+- **Rate Limiting**: Max 10 emails per hour per sender
 
 ### Data Security
-- **PII Handling**: Minimize storage of personal information
-- **Encryption**: Encrypt email content at rest
-- **Access Control**: Restrict access to email processing logs
+- **Email Storage**: Hash email content for deduplication
+- **Encryption**: Encrypt stored email content
+- **Access Control**: User-scoped data access
 - **Audit Trail**: Log all processing activities
 
-### API Security
-- **Authentication**: Require user authentication for all endpoints
-- **Authorization**: Ensure users can only access their own data
-- **Input Validation**: Validate all API inputs
-- **Rate Limiting**: Prevent API abuse
+### Implementation
+
+```typescript
+// backend/src/middleware/emailSecurity.ts
+const ALLOWED_SENDERS = [
+  'ajprameswari@gmail.com',
+  'mathiasxaj@gmail.com', 
+  'mathiassiig@gmail.com',
+  'mathias_sn@hotmail.com'
+] as const;
+
+export function validateEmailSender(senderEmail: string): boolean {
+  return ALLOWED_SENDERS.includes(senderEmail as any);
+}
+
+export function generateEmailHash(content: string): string {
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+```
 
 ## Testing Strategy
 
-### Unit Tests
-- Email parsing and validation
-- LLM response processing
-- Product matching algorithms
-- Order creation logic
+### Test Data Requirements
 
-### Integration Tests
-- End-to-end email processing
-- LLM API integration
-- Database operations
-- Webhook handling
+1. **Sample Receipts**
+   - Amazon order confirmations
+   - Grocery store receipts
+   - Restaurant receipts
+   - Online shopping confirmations
 
-### Manual Testing
-- Various receipt formats
-- Edge cases and error scenarios
-- User workflow validation
-- Performance testing
+2. **Edge Cases**
+   - Receipts with unclear text
+   - Multiple items with similar names
+   - Foreign language receipts
+   - Receipts with missing information
 
-### Test Data
-- Sample receipts from major retailers
-- Edge cases (unclear text, missing information)
-- Multiple languages and formats
-- Large receipts with many items
+### Test Implementation
+
+```typescript
+// backend/src/tests/emailProcessing.test.ts
+describe('Email Processing', () => {
+  test('should parse Amazon receipt correctly', async () => {
+    const sampleEmail = {
+      sender: 'ajprameswari@gmail.com',
+      body: 'Your Amazon order... Coffee Beans $12.99...'
+    };
+    
+    const result = await processEmail(sampleEmail);
+    
+    expect(result.status).toBe('COMPLETED');
+    expect(result.order.isDraft).toBe(true);
+    expect(result.order.lineItems).toHaveLength(1);
+  });
+
+  test('should handle duplicate emails', async () => {
+    const email = createSampleEmail();
+    
+    await processEmail(email);
+    const result = await processEmail(email); // Duplicate
+    
+    expect(result.status).toBe('DUPLICATE');
+  });
+});
+```
 
 ## Rollout Plan
 
-### Phase 1: Limited Beta (Week 7)
+### Phase 1: Internal Testing (Week 7)
 - Deploy to staging environment
-- Test with 2-3 power users
-- Process 5-10 emails/day
-- Gather feedback and iterate
+- Test with team members only
+- Process 5-10 test emails
+- Validate core functionality
 
-### Phase 2: Expanded Beta (Week 8-9)
-- Invite 10-15 beta users
-- Process 20-50 emails/day
-- Monitor performance and costs
-- Refine product matching
+### Phase 2: Limited Beta (Week 8)
+- Invite 2-3 trusted users
+- Process real receipts
+- Monitor costs and performance
+- Gather user feedback
 
-### Phase 3: General Availability (Week 10)
+### Phase 3: General Availability (Week 9)
 - Full rollout to all users
-- Documentation and tutorials
-- Monitor scaling and performance
-- Support 100+ emails/day
+- Create user documentation
+- Monitor scaling and costs
+- Provide user support
 
-### Rollback Plan
-- Feature flags for easy disable
-- Manual processing fallback
-- Data export capabilities
-- Clear communication plan
+### Monitoring and Alerts
+
+```typescript
+// Key metrics to monitor
+const MONITORING_METRICS = {
+  emailProcessingRate: 'target: >95%',
+  averageProcessingTime: 'target: <2 minutes', 
+  llmAccuracy: 'target: >90%',
+  userApprovalRate: 'target: >80%',
+  costPerEmail: 'target: <$0.01'
+};
+
+// Alert thresholds
+const ALERT_THRESHOLDS = {
+  processingFailureRate: '>10%',
+  processingTime: '>5 minutes',
+  llmErrorRate: '>20%',
+  dailyVolume: '>150 emails'
+};
+```
 
 ## Future Considerations
 
 ### Short-term Enhancements (3-6 months)
-- **OCR Integration**: Process image-based receipts
-- **Mobile App**: Direct photo capture and processing
-- **Better Product Matching**: Machine learning models
-- **Multi-language Support**: Support for more languages
+- **OCR Integration**: Process receipt images from photos
+- **Mobile App**: Direct photo capture and processing  
+- **Receipt Categories**: Automatic expense categorization
+- **Multi-language Support**: Support for additional languages
 
 ### Long-term Vision (6-12 months)
-- **Receipt Categorization**: Automatic expense categorization
-- **Budget Integration**: Link with budgeting features
-- **Vendor API Integration**: Direct integration with retailers
-- **Smart Predictions**: Predict future purchases
+- **Smart Predictions**: Predict future purchases based on patterns
+- **Vendor API Integration**: Direct integration with major retailers
+- **Advanced Analytics**: Shopping insights and recommendations
+- **Budget Integration**: Link with personal budgeting features
 
 ### Scaling Considerations
 - **Horizontal Scaling**: Multiple processing workers
-- **Database Optimization**: Indexing and caching strategies
-- **CDN Integration**: Faster email content delivery
-- **Monitoring**: Advanced metrics and alerting
+- **Database Optimization**: Indexing and query optimization
+- **CDN Integration**: Faster content delivery
+- **Advanced Monitoring**: Real-time metrics and alerting
 
-## Appendix
+## Conclusion
 
-### A. Sample Receipt Formats
+This RFC outlines a comprehensive plan for implementing an email-based order parsing system that will significantly improve the user experience by automating receipt processing. The proposed solution balances functionality, cost-effectiveness, and security while providing a solid foundation for future enhancements.
 
-**Amazon Email Receipt:**
-```
-Your order of January 15, 2025
+**Key Success Metrics:**
+- 95%+ email processing success rate
+- <2 minute average processing time
+- 90%+ LLM parsing accuracy
+- 80%+ user approval rate for drafts
+- <$0.01 cost per processed email
 
-Items Ordered:
-1. Coffee Beans - Premium Roast - $12.99
-2. Milk - Organic Whole Milk - $4.49
-   Quantity: 2
-
-Subtotal: $21.97
-Tax: $1.98
-Total: $23.95
-```
-
-**Grocery Store Receipt:**
-```
-WHOLE FOODS MARKET
-Order #: 12345
-Date: 01/15/2025
-
-COFFEE BEANS ORGANIC    $12.99
-MILK WHOLE ORGANIC QTY:2 $8.98
-BREAD SOURDOUGH         $3.49
-
-SUBTOTAL               $25.46
-TAX                     $2.29
-TOTAL                  $27.75
-```
-
-### B. Email Service Provider Comparison
-
-| Provider | Email Parsing | Webhook Support | Cost | Reliability |
-|----------|---------------|-----------------|------|-------------|
-| Mailgun | Excellent | Yes | Low-Medium | High |
-| SendGrid | Good | Yes | Medium | High |
-| Postmark | Good | Yes | Medium-High | High |
-| AWS SES | Basic | Limited | Low | Medium |
-
-### C. Error Handling Matrix
-
-| Error Type | Detection | Recovery | User Impact |
-|------------|-----------|----------|-------------|
-| Invalid Email | Immediate | Log & notify | None |
-| LLM Timeout | 30s timeout | Retry 3x | Delayed processing |
-| Parse Failure | Validation | Manual queue | Review required |
-| Duplicate Email | Hash check | Skip processing | None |
-| Database Error | Exception | Retry & alert | Temporary delay |
-
-### D. Monitoring Metrics
-
-**Key Performance Indicators:**
-- Email processing success rate (target: >95%)
-- Average processing time (target: <2 minutes)
-- LLM accuracy rate (target: >90%)
-- User approval rate for drafts (target: >80%)
-- Cost per processed email (target: <$0.01)
-
-**Alerting Thresholds:**
-- Processing failure rate >10%
-- Processing time >5 minutes
-- LLM error rate >20%
-- Daily email volume >150
+**Next Steps:**
+1. Review and approve this RFC
+2. Begin Phase 1 implementation
+3. Set up monitoring and alerting
+4. Create detailed user documentation
+5. Plan beta testing program
 
 ---
 

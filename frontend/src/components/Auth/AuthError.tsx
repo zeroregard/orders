@@ -1,88 +1,33 @@
 import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { GoogleSignInButton } from './GoogleSignInButton';
-import type { AuthenticationError, AuthorizationError } from '../../utils/apiClient';
+import { AlertCircle, X } from 'lucide-react';
 import './AuthError.css';
 
 interface AuthErrorProps {
-  error: AuthenticationError | AuthorizationError | null;
-  onRetry?: () => void;
-  showSignInButton?: boolean;
+  message: string;
+  onClose?: () => void;
+  className?: string;
 }
 
-export const AuthError: React.FC<AuthErrorProps> = ({ 
-  error, 
-  onRetry,
-  showSignInButton = true 
-}) => {
-  const { user, signOut } = useAuth();
-
-  if (!error) return null;
-
-  const isAuthenticationError = error.status === 401;
-  const isAuthorizationError = error.status === 403;
-
-  const handleSignOut = () => {
-    signOut();
-    onRetry?.();
-  };
-
+export function AuthError({
+  message,
+  onClose,
+  className = ''
+}: AuthErrorProps) {
   return (
-    <div className="auth-error-container">
-      <div className="auth-error-card">
-        <div className="auth-error-icon">
-          {isAuthenticationError ? '🔐' : '🚫'}
-        </div>
-        
-        <h2 className="auth-error-title">
-          {isAuthenticationError ? 'Authentication Required' : 'Access Denied'}
-        </h2>
-        
-        <p className="auth-error-message">
-          {error.message}
-        </p>
-        
-        {isAuthenticationError && (
-          <div className="auth-error-content">
-            <p className="auth-error-description">
-              Please sign in with your Google account to access this feature.
-            </p>
-            {showSignInButton && (
-              <div className="auth-error-signin">
-                <GoogleSignInButton />
-              </div>
-            )}
-          </div>
-        )}
-        
-        {isAuthorizationError && (
-          <div className="auth-error-content">
-            <p className="auth-error-description">
-              Your account doesn't have permission to access this resource.
-            </p>
-            {user && (
-              <div className="auth-error-user-info">
-                <p>Currently signed in as: <strong>{user.email}</strong></p>
-                <button 
-                  className="auth-error-signout-btn"
-                  onClick={handleSignOut}
-                >
-                  Sign out and try different account
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {onRetry && (
-          <button 
-            className="auth-error-retry-btn"
-            onClick={onRetry}
+    <div className={`auth-error ${className}`}>
+      <div className="auth-error-content">
+        <AlertCircle className="auth-error-icon" size={20} />
+        <span className="auth-error-message">{message}</span>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="auth-error-close"
+            aria-label="Close error"
           >
-            Try Again
+            <X size={16} />
           </button>
         )}
       </div>
     </div>
   );
-}; 
+} 

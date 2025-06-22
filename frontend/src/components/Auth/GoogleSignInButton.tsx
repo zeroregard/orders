@@ -9,13 +9,13 @@ interface GoogleSignInButtonProps {
   width?: string;
 }
 
-export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
+export function GoogleSignInButton({
   theme = 'outline',
   size = 'large',
   text = 'signin_with',
   shape = 'rectangular',
   width = '280',
-}) => {
+}: GoogleSignInButtonProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
   const { isLoading } = useAuth();
 
@@ -57,4 +57,4 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       <div ref={buttonRef} className="google-signin-button" />
     </div>
   );
-}; 
+} 

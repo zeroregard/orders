@@ -1,0 +1,145 @@
+# Cursor Rules for Auto-Order Project
+
+## React Component Guidelines
+
+### Component Declaration Style
+- **NEVER** use `React.FC` or `FC` types for components
+- **ALWAYS** use function declarations instead of arrow functions for components
+- **ALWAYS** use named exports for components
+
+```typescript
+// ❌ DON'T DO THIS
+export const MyComponent: React.FC<Props> = ({ prop1, prop2 }) => {
+  return <div>{prop1}</div>;
+};
+
+// ✅ DO THIS INSTEAD
+export function MyComponent({ prop1, prop2 }: Props) {
+  return <div>{prop1}</div>;
+}
+```
+
+### Component Structure
+- Use TypeScript interfaces for props
+- Place interfaces above the component function
+- Use destructuring for props in function parameters
+- Keep components focused and single-responsibility
+
+## Styling Guidelines
+
+### Tailwind CSS First
+- **ALWAYS** use Tailwind CSS for styling
+- **NEVER** write custom CSS unless absolutely necessary
+- Use Tailwind's utility classes for all styling needs
+
+### Custom Styling Approach
+- If a specific Tailwind feature is missing, create a **Tailwind plugin** instead of custom CSS
+- Only use custom CSS for complex animations or very specific design requirements
+- Keep custom CSS in component-specific files (e.g., `Component.css`)
+
+### Tailwind Best Practices
+- Use semantic color names from the design system
+- Prefer Tailwind's spacing scale over arbitrary values
+- Use responsive prefixes for mobile-first design
+- Leverage Tailwind's state variants (hover:, focus:, etc.)
+
+```typescript
+// ✅ Good Tailwind usage
+<button className="px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-lg transition-colors">
+  Click me
+</button>
+
+// ❌ Avoid arbitrary values unless necessary
+<button className="px-[13px] py-[9px]">Click me</button>
+```
+
+## File Organization
+
+### Component Files
+- Each component should have its own file
+- Use PascalCase for component file names
+- Co-locate related files (styles, tests) in the same directory
+
+### Import Order
+1. React and React-related imports
+2. Third-party libraries
+3. Internal utilities and hooks
+4. Type imports (use `type` keyword)
+5. Relative imports
+6. CSS imports (last)
+
+```typescript
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
+import { apiClient } from '../../utils/apiClient';
+import type { Product } from '../../types/product';
+import './Component.css';
+```
+
+## Code Quality
+
+### TypeScript
+- Use strict TypeScript configuration
+- Define proper interfaces for all props and data structures
+- Avoid `any` type - use proper typing or `unknown`
+- Use type imports when importing only types
+
+### React Hooks
+- Follow the Rules of Hooks
+- Use `useCallback` and `useMemo` for performance optimization when needed
+- Properly define dependency arrays for `useEffect`
+
+### Error Handling
+- Handle loading and error states in components
+- Use proper error boundaries where appropriate
+- Provide meaningful error messages to users
+
+## Architecture Patterns
+
+### State Management
+- Use React's built-in state management (useState, useContext)
+- Keep state as close to where it's used as possible
+- Use custom hooks for complex state logic
+
+### API Integration
+- Use the existing `apiClient` utility for API calls
+- Handle loading, success, and error states consistently
+- Implement proper error handling and user feedback
+
+### Routing
+- Use React Router for client-side routing
+- Implement proper route protection with `ProtectedRoute`
+- Handle unauthorized access gracefully
+
+## Performance
+
+### Optimization
+- Use React.memo for expensive components
+- Implement proper key props for lists
+- Avoid unnecessary re-renders with proper dependency arrays
+- Use lazy loading for route-based code splitting
+
+### Bundle Size
+- Import only what you need from libraries
+- Use tree-shaking friendly imports
+- Monitor bundle size and optimize when necessary
+
+## Accessibility
+
+### A11y Requirements
+- Use semantic HTML elements
+- Provide proper ARIA labels and roles
+- Ensure keyboard navigation works
+- Maintain proper color contrast ratios
+- Use Tailwind's focus utilities for focus management
+
+## Testing
+
+### Component Testing
+- Write unit tests for complex logic
+- Test component behavior, not implementation details
+- Use React Testing Library for component tests
+- Mock external dependencies properly
+
+Remember: These rules ensure consistency, maintainability, and performance across the entire codebase. Always follow these guidelines when creating or modifying components. 

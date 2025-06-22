@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { PurchaseHistory } from '../../api/backend';
 import './PurchaseGraph.css';
 
@@ -14,7 +14,7 @@ interface DayData {
   month: number;
 }
 
-const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predictedDates }) => {
+export function PurchaseGraph({ purchaseHistory, predictedDates }: PurchaseGraphProps) {
   const [days, setDays] = useState<DayData[]>([]);
 
   useEffect(() => {
@@ -166,6 +166,4 @@ const PurchaseGraph: React.FC<PurchaseGraphProps> = ({ purchaseHistory, predicte
       </div>
     </div>
   );
-};
-
-export default PurchaseGraph; 
+} 

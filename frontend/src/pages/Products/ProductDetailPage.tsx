@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Calendar, ScatterChartIcon, icons, AlertCircle, BarChart2 } from 'lucide-react';
 import type { Product, PurchaseHistory } from '../../api/backend';
 import { getProducts, getPurchaseHistory, getPrediction } from '../../api/backend';
-import PurchaseGraph from '../../components/Products/PurchaseGraph';
+import { PurchaseGraph } from '../../components/Products/PurchaseGraph';
 import { DetailPageLayout, DetailCard, SkeletonCard } from '../../components';
 import { EditProductForm } from './components/EditProductForm';
 import { PurchaseCalendar } from '../../components/Products/PurchaseCalendar';
@@ -23,7 +23,7 @@ export function ProductDetailPage() {
   const formatFrequency = (isoDuration: string) => {
     const weeks = isoDuration.match(/(\d+)W/)?.[1];
     const days = isoDuration.match(/(\d+)D/)?.[1];
-    
+
     const parts = [];
     if (weeks) {
       parts.push(`${weeks} ${parseInt(weeks) === 1 ? 'week' : 'weeks'}`);
@@ -31,7 +31,7 @@ export function ProductDetailPage() {
     if (days) {
       parts.push(`${days} ${parseInt(days) === 1 ? 'day' : 'days'}`);
     }
-    
+
     return parts.join(' and ');
   };
 
@@ -45,10 +45,10 @@ export function ProductDetailPage() {
 
     // Calculate annual spend based on current year's data only
     const currentYear = new Date().getFullYear();
-    const thisYearPurchases = history.purchases.filter(p => 
+    const thisYearPurchases = history.purchases.filter(p =>
       new Date(p.date).getFullYear() === currentYear
     );
-    
+
     const thisYearSpent = thisYearPurchases.reduce((sum, p) => sum + (p.quantity * price), 0);
     const today = new Date();
     const daysIntoYear = (today.getTime() - new Date(currentYear, 0, 1).getTime()) / (24 * 60 * 60 * 1000);
@@ -210,31 +210,36 @@ export function ProductDetailPage() {
               <DetailCard
                 title="Purchase Heatmap & Prediction"
                 icon={ScatterChartIcon}
+
               >
-                <PurchaseGraph
-                  purchaseHistory={purchaseHistory}
-                  predictedDates={predictedDates || undefined}
-                />
-                {averageFrequency && (
-                  <p className="mt-4 text-center text-violet-300">
-                    Average purchase frequency: {formatFrequency(averageFrequency)}
-                  </p>
-                )}
-                {predictedDates && predictedDates.length > 0 && (
-                  <div className="mt-6 p-4 bg-violet-500/10 rounded-lg text-violet-400 font-medium">
-                    <p className="text-center mb-2">Next predicted purchase:</p>
-                    <div className="flex flex-col gap-2">
-                      {predictedDates
-                        .filter(date => new Date(date).getFullYear() === new Date().getFullYear())
-                        .map((date) => (
-                          <p key={date} className="text-center">
-                            {formatDate(date)}
-                          </p>
-                        ))[0]
-                      }
-                    </div>
-                  </div>
-                )}
+                <div className="flex lg:flex-row">
+                  <PurchaseGraph
+                    purchaseHistory={purchaseHistory}
+                    predictedDates={predictedDates || undefined}
+                  />
+                  <div>                {averageFrequency && (
+                    <p className="mt-4 text-center text-violet-300">
+                      Average purchase frequency: {formatFrequency(averageFrequency)}
+                    </p>
+                  )}
+                    {predictedDates && predictedDates.length > 0 && (
+                      <div className="mt-6 p-4 bg-violet-500/10 rounded-lg text-violet-400 font-medium">
+                        <p className="text-center mb-2">Next predicted purchase:</p>
+                        <div className="flex flex-col gap-2">
+                          {predictedDates
+                            .filter(date => new Date(date).getFullYear() === new Date().getFullYear())
+                            .map((date) => (
+                              <p key={date} className="text-center">
+                                {formatDate(date)}
+                              </p>
+                            ))[0]
+                          }
+                        </div>
+                      </div>
+                    )}</div>
+                </div>
+
+
               </DetailCard>
             </>
           ) : (
