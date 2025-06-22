@@ -1,6 +1,3 @@
-#!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
 # Check if there are any changes in the backend directory
 if git diff --cached --name-only | grep -q '^backend/'; then
   echo "Backend changes detected, running backend unit tests..."
