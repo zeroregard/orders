@@ -212,16 +212,17 @@ export function ProductDetailPage() {
                 icon={ScatterChartIcon}
 
               >
-                <div className="flex lg:flex-row">
+                <div className="flex lg:!flex-row flex-col gap-8">
                   <PurchaseGraph
                     purchaseHistory={purchaseHistory}
                     predictedDates={predictedDates || undefined}
                   />
-                  <div>                {averageFrequency && (
-                    <p className="mt-4 text-center text-violet-300">
-                      Average purchase frequency: {formatFrequency(averageFrequency)}
-                    </p>
-                  )}
+                  <div>
+                    {averageFrequency && (
+                      <p className="text-center text-violet-300">
+                        Average purchase frequency: {formatFrequency(averageFrequency)}
+                      </p>
+                    )}
                     {predictedDates && predictedDates.length > 0 && (
                       <div className="mt-6 p-4 bg-violet-500/10 rounded-lg text-violet-400 font-medium">
                         <p className="text-center mb-2">Next predicted purchase:</p>
