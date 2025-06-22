@@ -6,16 +6,17 @@
   "scripts": {
     "dev": "concurrently \"pnpm --filter backend dev\" \"pnpm --filter frontend dev\"",
     "build": "pnpm --filter backend build && pnpm --filter frontend build",
-    "test": "pnpm --filter backend test && pnpm --filter frontend test",
     "generate:schemas": "pnpm --filter backend generate:schemas",
-    "postgenerate:schemas": "echo 'Schemas generated in shared/schemas/ - commit these files to fix Vercel builds'"
+    "postgenerate:schemas": "echo 'Schemas generated in shared/schemas/ - commit these files to fix Vercel builds'",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.12.1",
   "devDependencies": {
-    "concurrently": "^7.6.0"
+    "concurrently": "^8.2.2",
+    "husky": "^9.0.11"
   },
   "workspaces": [
     "frontend",
