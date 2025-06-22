@@ -1,0 +1,22 @@
+@keyframes shine {
+  0% {
+    background-position: -100% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.predicted-date-shine {
+  background: linear-gradient(
+    120deg,
+    rgb(139, 92, 246) 40%,
+    rgb(167, 139, 250) 50%,
+    rgb(139, 92, 246) 60%
+  );
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shine 3s linear infinite;
+} 

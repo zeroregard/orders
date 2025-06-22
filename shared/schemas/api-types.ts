@@ -9,6 +9,8 @@ export interface Product {
   iconId?: string;
   createdAt: string;
   updatedAt: string;
+  lastOrdered?: string;
+  nextPredictedPurchase?: string;
 }
 
 export interface Order {

@@ -71,21 +71,56 @@ router.get('/', async (_req, res) => {
       }
     });
     
-    // Map the products to include lastOrdered
-    const productsWithLastOrdered = products.map(product => {
+    // Map the products to include lastOrdered and predictions
+    const productsWithDetails = await Promise.all(products.map(async product => {
       const lastOrder = product.orderLineItems
         .map(item => item.order.purchaseDate)
         .sort((a, b) => b.getTime() - a.getTime())[0];
 
+      // Get prediction data if we have order history
+      let nextPredictedPurchase = null;
+      if (product.orderLineItems.length >= 2) {
+        try {
+          const prediction = await prisma.orderLineItem.findMany({
+            where: {
+              productId: product.id
+            },
+            include: {
+              order: true
+            },
+            orderBy: {
+              order: {
+                purchaseDate: 'asc'
+              }
+            }
+          });
+
+          if (prediction.length >= 2) {
+            const purchaseDates = prediction.map(item => new Date(item.order.purchaseDate));
+            const intervals: number[] = [];
+            for (let i = 1; i < purchaseDates.length; i++) {
+              intervals.push(purchaseDates[i].getTime() - purchaseDates[i - 1].getTime());
+            }
+            const avgIntervalMs = intervals.reduce((sum, v) => sum + v, 0) / intervals.length;
+            const lastPurchaseDate = purchaseDates[purchaseDates.length - 1];
+            
+            nextPredictedPurchase = new Date(lastPurchaseDate.getTime() + avgIntervalMs);
+          }
+        } catch (predErr) {
+          console.error('Error getting prediction for product:', predErr);
+        }
+      }
+
       return {
         ...product,
         lastOrdered: lastOrder || null,
+        nextPredictedPurchase,
         orderLineItems: undefined // Remove the orderLineItems from the response
       };
-    });
+    }));
     
     console.log(`Successfully fetched ${products.length} products`);
-    res.json(productsWithLastOrdered);
+    res.json(productsWithDetails);
   } catch (error: any) {
     console.error('Detailed error fetching products:');
     console.error('Error name:', error.name);

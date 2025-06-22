@@ -7,6 +7,7 @@ import type { Product } from '../../types/backendSchemas';
 import { ProductForm } from './components/ProductForm';
 import { PageLayout } from '../../components';
 import { SearchBar, type SortOption } from '../../components/Search/SearchBar';
+import { PredictedDate } from '../../components/Products';
 import React from 'react';
 import { formatDate } from '../../utils/dateFormatting';
 
@@ -228,13 +229,16 @@ export function ProductsPage() {
                 {product.lastOrdered ? (
                   <div className="flex items-center gap-2 text-gray-400">
                     <Calendar size={16} />
-                    <span className="text-sm">Last ordered: {formatDate(product.lastOrdered)}</span>
+                    <span className="text-sm opacity-50">Last: {formatDate(product.lastOrdered)}</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-gray-400">
                     <Calendar size={16} />
                     <span className="text-sm">Never ordered</span>
                   </div>
+                )}
+                {product.nextPredictedPurchase && (
+                  <PredictedDate date={product.nextPredictedPurchase} />
                 )}
               </div>
             </motion.div>

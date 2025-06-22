@@ -253,7 +253,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [handleCredentialResponse]);
 
   useEffect(() => {
-    initializeGoogleAuth();
+    const loadGoogleScript = () => {
+      // If Google is already loaded, initialize immediately
+      if (window.google) {
+        initializeGoogleAuth();
+        return;
+      }
+
+      // Load Google Identity Services script
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        console.log('✅ Google Identity Services script loaded');
+        initializeGoogleAuth();
+      };
+      script.onerror = () => {
+        console.error('❌ Failed to load Google Identity Services script');
+        setError('Failed to load Google Sign-In');
+      };
+      document.head.appendChild(script);
+    };
+
+    loadGoogleScript();
   }, [initializeGoogleAuth]);
 
   const signIn = async (credential: string) => {
