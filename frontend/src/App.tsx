@@ -117,10 +117,8 @@ const AppContent = () => {
             </ProtectedRoute>
           } />
           
-          {/* Catch all route - redirect to login if not authenticated, otherwise to products */}
-          <Route path="*" element={
-            auth.isAuthenticated ? <Navigate to="/products" replace /> : <Navigate to="/login" replace />
-          } />
+          {/* Catch all route - always redirect to login for unknown routes */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </main>
     </div>
