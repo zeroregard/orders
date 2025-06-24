@@ -50,7 +50,7 @@ export function Navigation() {
               <motion.span
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="relative z-20 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full"
+                className="relative z-20 px-2 py-1 text-xs font-medium bg-amber-500/20 text-amber-400 rounded-full"
               >
                 {draftCount > 99 ? '99+' : draftCount}
               </motion.span>
