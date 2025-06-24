@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Calendar, ShoppingCart, CheckCircle, Trash2 } from 'lucide-react';
 import { getOrders, approveOrder, deleteDraftOrder } from '../../api/backend';
 import type { Order } from '../../types/backendSchemas';
-import { PageLayout, DraftBadge } from '../../components';
+import { PageLayout, DraftBadge, AnimatedCardGrid, AnimatedCard } from '../../components';
 import { SearchBar, type SortOption } from '../../components/Search/SearchBar';
 import { formatDate } from '../../utils/dateFormatting';
 
@@ -253,20 +253,12 @@ export function DraftsPage() {
         />
       </motion.div>
 
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
-      >
-        {filteredAndSortedOrders.map((order, index) => (
-          <motion.div
-            key={order.id}
-            className="bg-gray-800 border border-amber-500/30 rounded-xl overflow-hidden hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-200"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 * index }}
-            whileHover={{ y: -4 }}
+      <AnimatedCardGrid>
+        {filteredAndSortedOrders.map((order) => (
+          <AnimatedCard 
+            key={order.id} 
+            id={order.id}
+            className="border-amber-500/30 overflow-hidden hover:shadow-lg hover:shadow-amber-500/10 transition-all duration-200"
           >
             <div className="p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -335,9 +327,9 @@ export function DraftsPage() {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </AnimatedCard>
         ))}
-      </motion.div>
+      </AnimatedCardGrid>
     </PageLayout>
   );
 } 

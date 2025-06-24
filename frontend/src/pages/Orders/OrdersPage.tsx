@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calendar, ShoppingCart } from 'lucide-react';
 import { getOrders } from '../../api/backend';
 import type { Order } from '../../types/backendSchemas';
 import { OrderForm } from './components/OrderForm';
-import { PageLayout } from '../../components';
+import { PageLayout, AnimatedCardGrid, AnimatedCard } from '../../components';
 import { SearchBar, type SortOption } from '../../components/Search/SearchBar';
 import { formatDate } from '../../utils/dateFormatting';
 
@@ -201,22 +201,9 @@ export function OrdersPage() {
         />
       </motion.div>
 
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
+      <AnimatedCardGrid>
         {filteredAndSortedOrders.map((order) => (
-          <motion.div
-            key={order.id}
-            className="bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-purple-500 transition-colors"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            whileHover={{ y: -4, boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)' }}
-          >
+          <AnimatedCard key={order.id} id={order.id}>
             <div className="flex justify-between items-center mb-4">
               <Link 
                 to={`/orders/${order.id}`} 
@@ -264,9 +251,9 @@ export function OrdersPage() {
                 </div>
               </div>
             )}
-          </motion.div>
+          </AnimatedCard>
         ))}
-      </motion.div>
+      </AnimatedCardGrid>
 
       {filteredAndSortedOrders.length === 0 && !loading && (
         <motion.div
@@ -287,32 +274,34 @@ export function OrdersPage() {
         </motion.div>
       )}
 
-      {showForm && (
-        <motion.div
-          className="fixed inset-0 flex items-center justify-center p-4 z-50"
-          style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.30)',
-            backdropFilter: 'blur(3px)',
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setShowForm(false)}
-        >
+      <AnimatePresence>
+        {showForm && (
           <motion.div
-            className="bg-gray-800 rounded-xl p-6 w-full max-w-md max-h-screen overflow-y-auto"
-            initial={{ opacity: 0, scale: 0.8, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 50 }}
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 flex items-center justify-center p-4 z-50"
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.30)',
+              backdropFilter: 'blur(3px)',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowForm(false)}
           >
-            <OrderForm
-              onCreated={handleCreate}
-              onCancel={() => setShowForm(false)}
-            />
+            <motion.div
+              className="bg-gray-800 rounded-xl p-6 w-full max-w-md max-h-screen overflow-y-auto"
+              initial={{ opacity: 0, scale: 0.8, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 50 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <OrderForm
+                onCreated={handleCreate}
+                onCancel={() => setShowForm(false)}
+              />
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
+        )}
+      </AnimatePresence>
     </PageLayout>
   );
 } 

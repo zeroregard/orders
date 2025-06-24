@@ -16,4 +16,7 @@ export * from './Skeleton';
 export * from './Typography/Title';
 
 // PWA
-export * from './PWA/PWAUpdateNotification'; 
+export * from './PWA/PWAUpdateNotification';
+
+// Animation
+export * from './Animation/AnimatedCardGrid'; 

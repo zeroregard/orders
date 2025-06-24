@@ -5,7 +5,7 @@ import { Plus, Calendar, icons } from 'lucide-react';
 import { getProducts } from '../../api/backend';
 import type { Product } from '../../types/backendSchemas';
 import { ProductForm } from './components/ProductForm';
-import { PageLayout } from '../../components';
+import { PageLayout, AnimatedCardGrid, AnimatedCard } from '../../components';
 import { SearchBar, type SortOption } from '../../components/Search/SearchBar';
 import { PredictedDate } from '../../components/Products';
 import { formatDate } from '../../utils/dateFormatting';
@@ -208,58 +208,41 @@ export function ProductsPage() {
         />
       </motion.div>
 
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        layout
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
-      >
-        <AnimatePresence mode="popLayout">
-          {filteredAndSortedProducts.map((product) => (
-            <motion.div
-              key={product.id}
-              className="bg-gray-800 border border-gray-700 rounded-xl p-6 hover:border-purple-500 transition-colors"
-              layout
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2 }}
-              whileHover={{ y: -4, boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)' }}
-            >
-              <div className="flex justify-between items-center">
-                <Link 
-                  to={`/products/${product.id}`} 
-                  className="flex mb-2 items-center gap-3 text-xl font-semibold text-white hover:text-purple-400 transition-colors"
-                >
-                  {React.createElement(icons[product.iconId as keyof typeof icons] || icons.Package, { 
-                    size: 24,
-                    className: "text-purple-400"
-                  })}
-                  <span className="mb-1 line-clamp-1">{product.name}</span>
-                </Link>
-              </div>
+      <AnimatedCardGrid>
+        {filteredAndSortedProducts.map((product) => (
+          <AnimatedCard key={product.id} id={product.id}>
+            <div className="flex justify-between items-center">
+              <Link 
+                to={`/products/${product.id}`} 
+                className="flex mb-2 items-center gap-3 text-xl font-semibold text-white hover:text-purple-400 transition-colors"
+              >
+                {React.createElement(icons[product.iconId as keyof typeof icons] || icons.Package, { 
+                  size: 24,
+                  className: "text-purple-400"
+                })}
+                <span className="mb-1 line-clamp-1">{product.name}</span>
+              </Link>
+            </div>
 
-              <div className="flex flex-col gap-2">
-                {product.lastOrdered ? (
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <Calendar size={16} />
-                    <span className="text-sm opacity-50">Last: {formatDate(product.lastOrdered)}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <Calendar size={16} />
-                    <span className="text-sm">Never ordered</span>
-                  </div>
-                )}
-                {product.nextPredictedPurchase && (
-                  <PredictedDate date={product.nextPredictedPurchase} />
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </motion.div>
+            <div className="flex flex-col gap-2">
+              {product.lastOrdered ? (
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Calendar size={16} />
+                  <span className="text-sm opacity-50">Last: {formatDate(product.lastOrdered)}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Calendar size={16} />
+                  <span className="text-sm">Never ordered</span>
+                </div>
+              )}
+              {product.nextPredictedPurchase && (
+                <PredictedDate date={product.nextPredictedPurchase} />
+              )}
+            </div>
+          </AnimatedCard>
+        ))}
+      </AnimatedCardGrid>
 
       {filteredAndSortedProducts.length === 0 && !loading && (
         <motion.div
