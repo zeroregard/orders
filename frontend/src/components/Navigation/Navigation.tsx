@@ -1,35 +1,52 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import './Navigation.css';
+
+const navigationTabs = [
+  { id: "products", label: "Products", path: "/products" },
+  { id: "orders", label: "Orders", path: "/orders" },
+  { id: "drafts", label: "Drafts", path: "/drafts" },
+];
 
 export function Navigation() {
+  const location = useLocation();
+  
+  // Determine active tab based on current path
+  const getActiveTab = () => {
+    const currentPath = location.pathname;
+    if (currentPath.startsWith('/products')) return 'products';
+    if (currentPath.startsWith('/orders')) return 'orders';
+    if (currentPath.startsWith('/drafts')) return 'drafts';
+    return 'products'; // default
+  };
+  
+  const activeTab = getActiveTab();
+
   return (
-    <nav className="navigation">
-      <motion.div
-        className="nav-links"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <NavLink 
-          to="/products" 
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-        >
-          Products
-        </NavLink>
-        <NavLink 
-          to="/orders" 
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-        >
-          Orders
-        </NavLink>
-        <NavLink 
-          to="/drafts" 
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-        >
-          Drafts
-        </NavLink>
-      </motion.div>
+    <nav className="flex items-center">
+      <div className="flex space-x-1 bg-white/5 rounded-full p-1">
+        {navigationTabs.map((tab) => (
+          <NavLink
+            key={tab.id}
+            to={tab.path}
+            className={`${
+              activeTab === tab.id ? "" : "hover:text-white/60"
+            } relative rounded-full px-4 py-2 text-sm font-medium !text-violet-400 transition focus-visible:outline-2 focus-visible:outline-violet-500 flex items-center gap-2`}
+            style={{
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            {activeTab === tab.id && (
+              <motion.span
+                layoutId="nav-bubble"
+                className="absolute inset-0 z-10 bg-white mix-blend-color-burn"
+                style={{ borderRadius: 9999 }}
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-20">{tab.label}</span>
+          </NavLink>
+        ))}
+      </div>
     </nav>
   );
 } 
