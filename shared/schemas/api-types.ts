@@ -10,6 +10,8 @@ export interface Product {
   isDraft?: boolean;
   createdAt: string;
   updatedAt: string;
+  lastOrdered?: string;
+  nextPredictedPurchase?: string;
 }
 
 export interface Order {
@@ -38,18 +40,24 @@ export interface CreateProductRequest {
   name: string;
   description?: string;
   price?: number;
+  iconId?: string;
+  isDraft?: boolean;
 }
 
 export interface UpdateProductRequest {
   name?: string;
   description?: string;
   price?: number;
+  iconId?: string;
 }
 
 export interface CreateOrderRequest {
   name: string;
   creationDate: string;
   purchaseDate: string;
+  isDraft?: boolean;
+  source?: 'MANUAL' | 'EMAIL' | 'API';
+  originalEmailHash?: string;
   lineItems: {
     productId?: string;
     quantity: number;
@@ -59,7 +67,10 @@ export interface CreateOrderRequest {
 
 export interface PredictionResponse {
   productId: string;
-  predictedNextPurchaseDate: string;
+  predictedPurchaseDates: string[];
+  averageFrequency: string;
+  recommendedQuantity: number;
+  monthlyConsumption: number;
 }
 
 export interface AuthUser {
@@ -72,6 +83,25 @@ export interface AuthUser {
 export interface AuthTestResponse {
   message: string;
   user: AuthUser;
+}
+
+export enum ProcessingStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED'
+}
+
+export interface EmailProcessingLog {
+  id: string;
+  emailHash: string;
+  status: ProcessingStatus;
+  processingAttempts: number;
+  lastAttemptAt?: string;
+  errorMessage?: string;
+  extractedOrderId?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ApiError {

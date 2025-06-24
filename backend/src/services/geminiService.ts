@@ -23,17 +23,11 @@ export interface GeminiError extends Error {
 }
 
 class GeminiService {
-  private genAI: GoogleGenerativeAI;
+  private genAI: GoogleGenerativeAI | null = null;
   private defaultConfig: GeminiConfig;
 
   constructor() {
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('GOOGLE_AI_API_KEY environment variable is required');
-    }
-
-    this.genAI = new GoogleGenerativeAI(apiKey);
+    // Initialize config but not the API client yet (lazy initialization)
     
     // Default configuration optimized for cost-effectiveness
     this.defaultConfig = {
@@ -45,6 +39,24 @@ class GeminiService {
     };
 
     console.log('✅ Gemini service initialized with model:', this.defaultConfig.model);
+  }
+
+  /**
+   * Initialize the Google AI client if not already initialized
+   */
+  private ensureInitialized(): GoogleGenerativeAI {
+    if (!this.genAI) {
+      const apiKey = process.env.GOOGLE_AI_API_KEY;
+      
+      if (!apiKey) {
+        throw new Error('GOOGLE_AI_API_KEY environment variable is required');
+      }
+      
+      this.genAI = new GoogleGenerativeAI(apiKey);
+      console.log('🔌 Gemini API client initialized');
+    }
+    
+    return this.genAI;
   }
 
   /**

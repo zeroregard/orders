@@ -208,8 +208,8 @@ router.post('/', async (req, res) => {
       });
     }
     
-    const { name, creationDate, purchaseDate, lineItems } = parseResult.data;
-    console.log('Parsed data:', { name, creationDate, purchaseDate, lineItems });
+    const { name, creationDate, purchaseDate, lineItems, isDraft = false, source = 'MANUAL', originalEmailHash } = parseResult.data;
+    console.log('Parsed data:', { name, creationDate, purchaseDate, lineItems, isDraft, source, originalEmailHash });
     
     // Use a transaction for the entire order creation process
     try {
@@ -251,6 +251,9 @@ router.post('/', async (req, res) => {
           name,
           creationDate: new Date(creationDate),
           purchaseDate: new Date(purchaseDate),
+          isDraft,
+          source,
+          originalEmailHash,
           lineItems: processedLineItems
         });
         
@@ -260,6 +263,9 @@ router.post('/', async (req, res) => {
               name,
               creationDate: new Date(creationDate),
               purchaseDate: new Date(purchaseDate),
+              isDraft,
+              source,
+              originalEmailHash,
               lineItems: {
                 create: processedLineItems
               }
@@ -457,6 +463,333 @@ router.delete('/:id', async (req, res) => {
     }
     console.error('Error deleting order:', error);
     res.status(500).json({ error: 'Failed to delete order' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/orders/drafts:
+ *   get:
+ *     summary: Get all draft orders
+ *     tags: [Orders]
+ *     responses:
+ *       200:
+ *         description: List of all draft orders
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Order'
+ */
+router.get('/drafts', async (_req, res) => {
+  try {
+    const draftOrders = await prisma.order.findMany({
+      where: { isDraft: true },
+      include: {
+        lineItems: {
+          include: {
+            product: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(draftOrders);
+  } catch (error) {
+    console.error('Error fetching draft orders:', error);
+    res.status(500).json({ error: 'Failed to fetch draft orders' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/orders/{id}/approve:
+ *   post:
+ *     summary: Approve a draft order (convert to regular order)
+ *     tags: [Orders]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Order ID
+ *     responses:
+ *       200:
+ *         description: Order approved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       404:
+ *         description: Order not found
+ *       400:
+ *         description: Order is not a draft
+ */
+router.post('/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // First check if the order exists and is a draft
+    const existingOrder = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        lineItems: {
+          include: {
+            product: true
+          }
+        }
+      }
+    });
+    
+    if (!existingOrder) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    if (!existingOrder.isDraft) {
+      return res.status(400).json({ error: 'Order is not a draft' });
+    }
+    
+    // Use transaction to approve order and its draft products
+    const result = await prisma.$transaction(async (tx: any) => {
+      // Get all draft products used in this order
+      const draftProductIds = existingOrder.lineItems
+        .filter(item => item.product.isDraft)
+        .map(item => item.productId);
+      
+      // Approve draft products
+      if (draftProductIds.length > 0) {
+        await tx.product.updateMany({
+          where: {
+            id: { in: draftProductIds }
+          },
+          data: {
+            isDraft: false
+          }
+        });
+      }
+      
+      // Approve the order
+      const approvedOrder = await tx.order.update({
+        where: { id },
+        data: { isDraft: false },
+        include: {
+          lineItems: {
+            include: {
+              product: true
+            }
+          }
+        }
+      });
+      
+      return approvedOrder;
+    });
+    
+    res.json(result);
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    console.error('Error approving order:', error);
+    res.status(500).json({ error: 'Failed to approve order' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/orders/{id}/draft:
+ *   delete:
+ *     summary: Delete a draft order
+ *     tags: [Orders]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Order ID
+ *     responses:
+ *       204:
+ *         description: Draft order deleted successfully
+ *       404:
+ *         description: Order not found
+ *       400:
+ *         description: Order is not a draft
+ */
+router.delete('/:id/draft', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // First check if the order exists and is a draft
+    const existingOrder = await prisma.order.findUnique({
+      where: { id }
+    });
+    
+    if (!existingOrder) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    if (!existingOrder.isDraft) {
+      return res.status(400).json({ error: 'Order is not a draft' });
+    }
+    
+    await prisma.order.delete({
+      where: { id }
+    });
+    
+    res.status(204).send();
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    console.error('Error deleting draft order:', error);
+    res.status(500).json({ error: 'Failed to delete draft order' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/orders/{id}/draft:
+ *   put:
+ *     summary: Update a draft order
+ *     tags: [Orders]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Order ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               creationDate:
+ *                 type: string
+ *                 format: date
+ *               purchaseDate:
+ *                 type: string
+ *                 format: date
+ *               lineItems:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/OrderLineItem'
+ *     responses:
+ *       200:
+ *         description: Draft order updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       404:
+ *         description: Order not found
+ *       400:
+ *         description: Order is not a draft
+ */
+router.put('/:id/draft', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, creationDate, purchaseDate, lineItems } = req.body;
+    
+    // First check if the order exists and is a draft
+    const existingOrder = await prisma.order.findUnique({
+      where: { id }
+    });
+    
+    if (!existingOrder) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    if (!existingOrder.isDraft) {
+      return res.status(400).json({ error: 'Order is not a draft' });
+    }
+    
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    if (creationDate) updateData.creationDate = new Date(creationDate);
+    if (purchaseDate) updateData.purchaseDate = new Date(purchaseDate);
+    
+    // If line items are provided, replace them (create draft products as needed)
+    if (Array.isArray(lineItems)) {
+      const result = await prisma.$transaction(async (tx: any) => {
+        // Process line items and create draft products on-the-fly if needed
+        const processedLineItems = [];
+        for (const item of lineItems) {
+          let productId = item.productId;
+          
+          // Create draft product on-the-fly if productName is provided but no productId
+          if (!productId && item.productName) {
+            const newProduct = await tx.product.create({
+              data: { 
+                name: item.productName,
+                isDraft: true // Products created for draft orders are also draft
+              }
+            });
+            productId = newProduct.id;
+          }
+          
+          // Verify product exists
+          if (!productId) {
+            throw new Error('Product ID or productName is required for each line item');
+          }
+          
+          const product = await tx.product.findUnique({ where: { id: productId } });
+          if (!product) {
+            throw new Error(`Product with id ${productId} not found`);
+          }
+          
+          processedLineItems.push({
+            productId,
+            quantity: item.quantity
+          });
+        }
+        
+        updateData.lineItems = {
+          deleteMany: {},
+          create: processedLineItems
+        };
+        
+        return await tx.order.update({
+          where: { id },
+          data: updateData,
+          include: {
+            lineItems: {
+              include: {
+                product: true
+              }
+            }
+          }
+        });
+      });
+      
+      res.json(result);
+    } else {
+      const order = await prisma.order.update({
+        where: { id },
+        data: updateData,
+        include: {
+          lineItems: {
+            include: {
+              product: true
+            }
+          }
+        }
+      });
+      
+      res.json(order);
+    }
+  } catch (error: any) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    console.error('Error updating draft order:', error);
+    res.status(500).json({ error: 'Failed to update draft order' });
   }
 });
 
