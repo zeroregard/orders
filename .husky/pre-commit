@@ -8,8 +8,10 @@ fi
 
 # Check if there are any changes in the frontend directory
 if git diff --cached --name-only | grep -q '^frontend/'; then
-  echo "Frontend changes detected, running frontend lint..."
+  echo "Frontend changes detected, running frontend checks..."
   pnpm --filter frontend lint || exit 1
+  echo "Running TypeScript compilation and build..."
+  cd frontend && pnpm exec tsc -b && pnpm exec vite build && cd ..
 else
-  echo "No frontend changes detected, skipping frontend lint."
+  echo "No frontend changes detected, skipping frontend checks."
 fi

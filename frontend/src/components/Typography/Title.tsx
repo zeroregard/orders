@@ -1,10 +1,9 @@
-import React from 'react';
 import type { LucideIcon } from 'lucide-react';
 
 interface TitleProps {
   children: React.ReactNode;
   icon?: LucideIcon;
-  variant?: 'page' | 'section';
+  variant?: 'page' | 'section' | 'card';
   className?: string;
 }
 
@@ -18,7 +17,8 @@ export function Title({
   
   const variantClasses = {
     page: 'text-xl text-white',
-    section: 'text-lg text-gray-200'
+    section: 'text-lg text-gray-200',
+    card: 'text-base text-gray-300'
   };
 
   const classes = [

@@ -85,12 +85,15 @@ export interface AuthTestResponse {
   user: AuthUser;
 }
 
-export enum ProcessingStatus {
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED'
-}
+export const ProcessingStatus = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  DUPLICATE: 'DUPLICATE'
+} as const;
+
+export type ProcessingStatus = typeof ProcessingStatus[keyof typeof ProcessingStatus];
 
 export interface EmailProcessingLog {
   id: string;

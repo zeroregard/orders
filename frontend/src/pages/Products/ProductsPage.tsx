@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calendar, icons } from 'lucide-react';
@@ -8,7 +8,6 @@ import { ProductForm } from './components/ProductForm';
 import { PageLayout } from '../../components';
 import { SearchBar, type SortOption } from '../../components/Search/SearchBar';
 import { PredictedDate } from '../../components/Products';
-import React from 'react';
 import { formatDate } from '../../utils/dateFormatting';
 
 const sortOptions: SortOption[] = [
