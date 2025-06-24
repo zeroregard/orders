@@ -1,0 +1,8 @@
+[providers.node]
+packageManager = "pnpm"
+
+[phases.install]
+cmds = ["pnpm install"]
+
+[phases.build]
+cmds = ["pnpm run build"] 
