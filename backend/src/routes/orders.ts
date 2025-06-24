@@ -222,7 +222,10 @@ router.post('/', async (req, res) => {
           // Create product on-the-fly if productName is provided but no productId
           if (!productId && item.productName) {
             const newProduct = await tx.product.create({
-              data: { name: item.productName }
+              data: { 
+                name: item.productName,
+                isDraft: isDraft // If the order is draft, mark the new product as draft too
+              }
             });
             productId = newProduct.id;
           }
@@ -623,7 +626,14 @@ router.delete('/:id/draft', async (req, res) => {
     
     // First check if the order exists and is a draft
     const existingOrder = await prisma.order.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        lineItems: {
+          include: {
+            product: true
+          }
+        }
+      }
     });
     
     if (!existingOrder) {
@@ -634,8 +644,38 @@ router.delete('/:id/draft', async (req, res) => {
       return res.status(400).json({ error: 'Order is not a draft' });
     }
     
-    await prisma.order.delete({
-      where: { id }
+    // Use transaction to delete order and cleanup orphaned draft products
+    await prisma.$transaction(async (tx: any) => {
+      // Get draft products used only in this order
+      const draftProductIds = existingOrder.lineItems
+        .filter(item => item.product.isDraft)
+        .map(item => item.productId);
+      
+      // Delete the order first
+      await tx.order.delete({
+        where: { id }
+      });
+      
+      // Check if any draft products are now orphaned (not used in any other orders)
+      if (draftProductIds.length > 0) {
+        for (const productId of draftProductIds) {
+          const otherOrdersCount = await tx.orderLineItem.count({
+            where: { 
+              productId,
+              order: {
+                id: { not: id } // Exclude the deleted order
+              }
+            }
+          });
+          
+          // If this draft product isn't used in any other orders, delete it
+          if (otherOrdersCount === 0) {
+            await tx.product.delete({
+              where: { id: productId }
+            });
+          }
+        }
+      }
     });
     
     res.status(204).send();

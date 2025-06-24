@@ -62,7 +62,7 @@ class GeminiService {
   /**
    * Get the configured Gemini model instance
    */
-  private getModel(config?: Partial<GeminiConfig>): GenerativeModel {
+  private getModel(config?: Partial<GeminiConfig>): GenerativeModel | undefined {
     const modelConfig = { ...this.defaultConfig, ...config };
     
     const generationConfig: GenerationConfig = {
@@ -72,8 +72,9 @@ class GeminiService {
       topP: modelConfig.topP,
     };
 
-    return this.genAI.getGenerativeModel({
-      model: modelConfig.model,
+    const genAI = this.ensureInitialized();
+    return genAI.getGenerativeModel({
+      model: modelConfig.model!,
       generationConfig,
     });
   }
@@ -89,6 +90,9 @@ class GeminiService {
       console.log('🤖 Sending request to Gemini API...');
       
       const model = this.getModel(config);
+      if (!model) {
+        throw new Error('No model found');
+      }
       const result = await model.generateContent(prompt);
       const response = result.response;
       

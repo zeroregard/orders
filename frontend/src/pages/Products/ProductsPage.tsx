@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Calendar, icons } from 'lucide-react';
 import { getProducts } from '../../api/backend';
@@ -17,6 +17,7 @@ const sortOptions: SortOption[] = [
 ];
 
 export function ProductsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,10 +26,25 @@ export function ProductsPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showForm, setShowForm] = useState(false);
 
+  // Check for PWA shortcut action
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action === 'add') {
+      setShowForm(true);
+      // Remove the action parameter from URL
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.delete('action');
+        return newParams;
+      });
+    }
+  }, [searchParams, setSearchParams]);
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const data = await getProducts();
+      // Exclude draft products from the main products page
+      const data = await getProducts({ includeDrafts: false });
       setProducts(data as Product[]);
       setError(null);
     } catch (err) {

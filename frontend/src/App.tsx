@@ -1,12 +1,15 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Navigation } from './components';
 import { ProductsPage, ProductDetailPage, OrdersPage, OrderDetailPage, DraftsPage } from './pages';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './hooks/useAuth';
 import { apiClient } from './utils/apiClient';
 import { useEffect } from 'react';
 import './App.css';
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
 import { LoginPage } from './pages/Auth/LoginPage';
+import { PWAUpdateNotification } from './components/PWA/PWAUpdateNotification';
+import { usePWA } from './hooks/usePWA';
 
 // Component to initialize API client with auth
 const AppInitializer = () => {
@@ -121,6 +124,11 @@ const AppContent = () => {
               <DraftsPage />
             </ProtectedRoute>
           } />
+          <Route path="/drafts/:id" element={
+            <ProtectedRoute>
+              <OrderDetailPage isDraft={true} />
+            </ProtectedRoute>
+          } />
           
           {/* Catch all route - always redirect to login for unknown routes */}
           <Route path="*" element={<Navigate to="/login" replace />} />
@@ -131,11 +139,18 @@ const AppContent = () => {
 };
 
 export default function App() {
+  const { showUpdateNotification, handleUpdate, handleDismiss } = usePWA();
+
   return (
     <Router>
       <AuthProvider>
         <AppInitializer />
         <AppContent />
+        <PWAUpdateNotification
+          show={showUpdateNotification}
+          onUpdate={handleUpdate}
+          onDismiss={handleDismiss}
+        />
       </AuthProvider>
     </Router>
   );

@@ -2,9 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, ShoppingCart, CheckCircle, Trash2 } from 'lucide-react';
-import { getOrders } from '../../api/backend';
+import { getOrders, approveOrder, deleteDraftOrder } from '../../api/backend';
 import type { Order } from '../../types/backendSchemas';
-import { PageLayout } from '../../components';
+import { PageLayout, DraftBadge } from '../../components';
 import { SearchBar, type SortOption } from '../../components/Search/SearchBar';
 import { formatDate } from '../../utils/dateFormatting';
 
@@ -20,6 +20,7 @@ export function DraftsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<string>('purchaseDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [processingOrders, setProcessingOrders] = useState<Set<string>>(new Set());
 
   const fetchDraftOrders = async () => {
     try {
@@ -38,6 +39,52 @@ export function DraftsPage() {
   useEffect(() => {
     fetchDraftOrders();
   }, []);
+
+  const handleApprove = async (orderId: string, event: React.MouseEvent) => {
+    event.preventDefault(); // Prevent Link navigation
+    event.stopPropagation();
+    
+    try {
+      setProcessingOrders(prev => new Set(prev).add(orderId));
+      await approveOrder(orderId);
+      // Refresh the list to remove the approved order
+      await fetchDraftOrders();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to approve order');
+    } finally {
+      setProcessingOrders(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(orderId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleDelete = async (orderId: string, orderName: string, event: React.MouseEvent) => {
+    event.preventDefault(); // Prevent Link navigation
+    event.stopPropagation();
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the draft order "${orderName}"? This action cannot be undone.`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      setProcessingOrders(prev => new Set(prev).add(orderId));
+      await deleteDraftOrder(orderId);
+      // Refresh the list to remove the deleted order
+      await fetchDraftOrders();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete draft order');
+    } finally {
+      setProcessingOrders(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(orderId);
+        return newSet;
+      });
+    }
+  };
 
   const filteredAndSortedOrders = useMemo(() => {
     const filtered = draftOrders.filter(order =>
@@ -225,15 +272,13 @@ export function DraftsPage() {
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
                 <Link
-                  to={`/orders/${order.id}`}
+                  to={`/drafts/${order.id}`}
                   className="text-xl font-semibold text-white hover:text-amber-400 transition-colors"
                 >
                   {order.name}
                 </Link>
                 <div className="ml-auto">
-                  <span className="px-2 py-1 text-xs font-medium bg-amber-500/20 text-amber-400 rounded-full">
-                    DRAFT
-                  </span>
+                  <DraftBadge />
                 </div>
               </div>
 
@@ -272,15 +317,18 @@ export function DraftsPage() {
               </div>
 
               <div className="flex gap-2 mt-4 pt-4 border-t border-gray-700">
-                <Link
-                  to={`/orders/${order.id}`}
-                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                <button
+                  onClick={(e) => handleApprove(order.id, e)}
+                  disabled={processingOrders.has(order.id)}
+                  className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
                 >
                   <CheckCircle size={16} />
-                  Review & Approve
-                </Link>
+                  {processingOrders.has(order.id) ? 'Approving...' : 'Approve'}
+                </button>
                 <button
-                  className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg text-sm transition-colors"
+                  onClick={(e) => handleDelete(order.id, order.name, e)}
+                  disabled={processingOrders.has(order.id)}
+                  className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 disabled:opacity-50 disabled:cursor-not-allowed text-red-400 rounded-lg text-sm transition-colors"
                   title="Delete draft"
                 >
                   <Trash2 size={16} />

@@ -1,17 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import { Calendar, ShoppingCart, Package } from 'lucide-react';
-import { getOrders } from '../../api/backend';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Calendar, ShoppingCart, Package, Trash2 } from 'lucide-react';
+import { getOrders, deleteOrder } from '../../api/backend';
 import type { Order } from '../../types/backendSchemas';
 import { EditOrderForm } from './components/EditOrderForm';
-import { DetailPageLayout, DetailCard, SkeletonCard } from '../../components';
+import { DetailPageLayout, DetailCard, SkeletonCard, Button, DraftBadge } from '../../components';
 
-export function OrderDetailPage() {
+interface OrderDetailPageProps {
+  isDraft?: boolean;
+}
+
+export function OrderDetailPage({ isDraft = false }: OrderDetailPageProps) {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchOrder = useCallback(async () => {
     if (!id) {
@@ -53,6 +59,26 @@ export function OrderDetailPage() {
     fetchOrder();
   };
 
+  const handleDelete = async () => {
+    if (!order || !id) return;
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the order "${order.name}"? This action cannot be undone.`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      setIsDeleting(true);
+      await deleteOrder(id);
+      navigate('/orders');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete order');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (loading) {
     return <SkeletonCard />;
   }
@@ -67,10 +93,26 @@ export function OrderDetailPage() {
 
   return (
     <DetailPageLayout
-      title={order.name}
-      backTo="/orders"
+      title={
+        <div className="flex items-center gap-3">
+          {order.name}
+          {(isDraft || order.isDraft) && <DraftBadge />}
+        </div>
+      }
+      backTo={isDraft ? "/drafts" : "/orders"}
       isEditing={isEditing}
       onEditToggle={() => setIsEditing(!isEditing)}
+      actionButtons={
+        <Button
+          variant="danger"
+          icon={Trash2}
+          onClick={handleDelete}
+          disabled={isDeleting}
+          size="sm"
+        >
+          {isDeleting ? 'Deleting...' : 'Delete'}
+        </Button>
+      }
     >
       {isEditing ? (
         <EditOrderForm

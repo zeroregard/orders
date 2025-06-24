@@ -1,0 +1,10 @@
+# Generated PWA files
+dev-dist/
+dist/
+public/icons/
+
+# Node modules
+node_modules/
+
+# Build outputs
+build/ 

@@ -12,8 +12,21 @@ import type {
 } from '../../../shared/schemas/api-types';
 
 // --- Products ---
-export async function getProducts(): Promise<Product[]> {
-  return apiClient.get<Product[]>('/products');
+export async function getProducts(options?: { includeDrafts?: boolean; draftsOnly?: boolean }): Promise<Product[]> {
+  const params = new URLSearchParams();
+  
+  if (options?.includeDrafts !== undefined) {
+    params.append('includeDrafts', options.includeDrafts.toString());
+  }
+  
+  if (options?.draftsOnly !== undefined) {
+    params.append('draftsOnly', options.draftsOnly.toString());
+  }
+  
+  const queryString = params.toString();
+  const endpoint = queryString ? `/products?${queryString}` : '/products';
+  
+  return apiClient.get<Product[]>(endpoint);
 }
 
 export async function createProduct(product: CreateProductRequest): Promise<Product> {
@@ -56,6 +69,14 @@ export async function updateOrder(id: string, order: Partial<CreateOrderRequest>
 
 export async function deleteOrder(id: string): Promise<void> {
   return apiClient.delete<void>(`/orders/${id}`);
+}
+
+export async function approveOrder(id: string): Promise<Order> {
+  return apiClient.post<Order>(`/orders/${id}/approve`, {});
+}
+
+export async function deleteDraftOrder(id: string): Promise<void> {
+  return apiClient.delete<void>(`/orders/${id}/draft`);
 }
 
 // --- Predictions ---

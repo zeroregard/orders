@@ -1,16 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import { Calendar, ScatterChartIcon, icons, AlertCircle, BarChart2 } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Calendar, ScatterChartIcon, icons, AlertCircle, BarChart2, Trash2 } from 'lucide-react';
 import type { Product, PurchaseHistory } from '../../api/backend';
-import { getProducts, getPurchaseHistory, getPrediction } from '../../api/backend';
+import { getProducts, getPurchaseHistory, getPrediction, deleteProduct } from '../../api/backend';
 import { PurchaseGraph } from '../../components/Products/PurchaseGraph';
-import { DetailPageLayout, DetailCard, SkeletonCard } from '../../components';
+import { DetailPageLayout, DetailCard, SkeletonCard, Button } from '../../components';
 import { EditProductForm } from './components/EditProductForm';
 import { PurchaseCalendar } from '../../components/Products/PurchaseCalendar';
 import { formatDate } from '../../utils/dateFormatting';
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [purchaseHistory, setPurchaseHistory] = useState<PurchaseHistory | null>(null);
   const [predictedDates, setPredictedDates] = useState<string[] | null>(null);
@@ -18,6 +19,7 @@ export function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Helper function to format ISO duration string
   const formatFrequency = (isoDuration: string) => {
@@ -113,6 +115,26 @@ export function ProductDetailPage() {
     loadData();
   };
 
+  const handleDelete = async () => {
+    if (!product || !id) return;
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the product "${product.name}"? This action cannot be undone and will remove all associated order history.`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      setIsDeleting(true);
+      await deleteProduct(id);
+      navigate('/products');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete product');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (loading) {
     return <SkeletonCard />;
   }
@@ -134,6 +156,17 @@ export function ProductDetailPage() {
       backTo="/products"
       isEditing={isEditing}
       onEditToggle={() => setIsEditing(!isEditing)}
+      actionButtons={
+        <Button
+          variant="danger"
+          icon={Trash2}
+          onClick={handleDelete}
+          disabled={isDeleting}
+          size="sm"
+        >
+          {isDeleting ? 'Deleting...' : 'Delete'}
+        </Button>
+      }
     >
       {isEditing ? (
         <EditProductForm

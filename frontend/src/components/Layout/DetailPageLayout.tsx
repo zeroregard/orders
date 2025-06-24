@@ -6,10 +6,11 @@ import { Title } from '../Typography/Title';
 import { PageLayout } from './PageLayout';
 
 interface DetailPageLayoutProps {
-  title: string;
+  title: React.ReactNode;
   backTo: string;
   isEditing: boolean;
   onEditToggle: () => void;
+  actionButtons?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -18,6 +19,7 @@ export function DetailPageLayout({
   backTo,
   isEditing,
   onEditToggle,
+  actionButtons,
   children
 }: DetailPageLayoutProps) {
   return (
@@ -33,14 +35,19 @@ export function DetailPageLayout({
               aria-label="Go back"
             />
           </Link>
-          <Title variant="page">{title}</Title>
+          <Title variant="page">
+            {typeof title === 'string' ? title : <div className="flex items-center">{title}</div>}
+          </Title>
         </div>
-        <Button
-          variant="primary"
-          onClick={onEditToggle}
-        >
-          {isEditing ? 'Cancel' : 'Edit'}
-        </Button>
+        <div className="flex items-center gap-3">
+          {!isEditing && actionButtons}
+          <Button
+            variant="primary"
+            onClick={onEditToggle}
+          >
+            {isEditing ? 'Cancel' : 'Edit'}
+          </Button>
+        </div>
       </div>
 
       <AnimatePresence mode="wait">

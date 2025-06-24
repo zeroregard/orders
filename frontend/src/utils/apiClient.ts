@@ -50,6 +50,23 @@ class ApiClient {
     this.onAuthError = handler;
   }
 
+  // Exchange Google ID token for custom JWT token
+  async exchangeGoogleToken(googleToken: string): Promise<{
+    token: string;
+    user: {
+      email: string;
+      name: string;
+      picture: string;
+      sub: string;
+    };
+    expiresIn: string;
+  }> {
+    return this.makeRequest('/auth/exchange-token', {
+      method: 'POST',
+      body: JSON.stringify({ googleToken }),
+    });
+  }
+
   private async makeRequest<T>(
     endpoint: string,
     options: RequestInit = {}

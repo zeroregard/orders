@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { GOOGLE_CLIENT_ID } from '../config/auth';
 import { STORAGE_KEYS } from '../constants/auth';
+import { apiClient } from '../utils/apiClient';
 
 // Types for Google Identity Services
 declare global {
@@ -49,7 +50,7 @@ interface User {
   sub: string;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
@@ -60,21 +61,12 @@ interface AuthContextType {
   clearError: () => void;
 }
 
-// Create context with a default value that matches the shape
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  isLoading: true,
-  error: null,
-  signIn: async () => {},
-  signOut: () => {},
-  clearError: () => {},
-});
-
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 interface JwtPayload {
   email?: string;
@@ -85,7 +77,7 @@ interface JwtPayload {
   [key: string]: unknown;
 }
 
-// JWT decode function (simple implementation for ID token)
+// JWT decode function (simple implementation for custom JWT tokens)
 function parseJwt(token: string): JwtPayload | null {
   try {
     const base64Url = token.split('.')[1];
@@ -171,8 +163,8 @@ const storage = {
   },
   
   isTokenValid: (expiresAt: number): boolean => {
-    // Add 30 minutes buffer before actual expiration
-    const bufferTime = 30 * 60 * 1000; // 30 minutes in milliseconds
+    // Add 5 minutes buffer before actual expiration (reduced from 30 minutes since we have 7-day tokens now)
+    const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
     const isValid = Date.now() < (expiresAt * 1000 - bufferTime);
     const timeUntilExpiry = Math.round((expiresAt * 1000 - Date.now()) / (1000 * 60));
     
@@ -279,40 +271,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loadGoogleScript();
   }, [initializeGoogleAuth]);
 
-  const signIn = async (credential: string) => {
+  const signIn = async (googleCredential: string) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Parse the ID token to get user info
-      const payload = parseJwt(credential);
-      if (!payload) {
-        throw new Error('Invalid token format');
-      }
+      console.log('🔄 Exchanging Google ID token for custom JWT token...');
+      
+      // Exchange Google ID token for custom JWT token
+      const response = await apiClient.exchangeGoogleToken(googleCredential);
+      
+      console.log('✅ Token exchange successful:', {
+        userEmail: response.user.email,
+        expiresIn: response.expiresIn
+      });
 
-      // Check if token is expired
-      const currentTime = Math.floor(Date.now() / 1000);
-      if (payload.exp && payload.exp < currentTime) {
-        throw new Error('Token has expired');
+      // Parse the custom JWT token to get expiration time
+      const payload = parseJwt(response.token);
+      if (!payload || !payload.exp) {
+        throw new Error('Invalid custom token format');
       }
-
-      // Extract user information
-      const userData: User = {
-        email: payload.email || '',
-        name: payload.name || '',
-        picture: payload.picture || '',
-        sub: payload.sub || '',
-      };
 
       // Store token and user info in state and localStorage
-      setToken(credential);
-      setUser(userData);
+      setToken(response.token);
+      setUser(response.user);
       
       // Persist to localStorage with expiration time
-      if (payload.exp) {
-        storage.setAuthData(credential, userData, payload.exp);
-        console.log('Auth session saved. Token expires at:', new Date(payload.exp * 1000).toISOString());
-      }
+      storage.setAuthData(response.token, response.user, payload.exp);
+      console.log('Auth session saved. Token expires at:', new Date(payload.exp * 1000).toISOString());
+      console.log('🎉 Authentication successful - session will last 7 days!');
+      
     } catch (error) {
       console.error('Sign-in error:', error);
       setError(error instanceof Error ? error.message : 'Sign-in failed');
@@ -342,6 +330,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [user?.email]);
 
+  // Set up API client with token getter and auth error handler
+  useEffect(() => {
+    apiClient.setTokenGetter(() => token);
+    apiClient.setAuthErrorHandler(() => {
+      console.log('🚨 API auth error - signing out user');
+      signOut();
+    });
+  }, [token, signOut]);
+
   const clearError = () => {
     setError(null);
   };
@@ -358,13 +355,4 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}; 
+} 
