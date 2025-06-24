@@ -29,8 +29,21 @@ export async function deleteProduct(id: string): Promise<void> {
 }
 
 // --- Orders ---
-export async function getOrders(): Promise<Order[]> {
-  return apiClient.get<Order[]>('/orders');
+export async function getOrders(options?: { includeDrafts?: boolean; draftsOnly?: boolean }): Promise<Order[]> {
+  const params = new URLSearchParams();
+  
+  if (options?.includeDrafts !== undefined) {
+    params.append('includeDrafts', options.includeDrafts.toString());
+  }
+  
+  if (options?.draftsOnly !== undefined) {
+    params.append('draftsOnly', options.draftsOnly.toString());
+  }
+  
+  const queryString = params.toString();
+  const endpoint = queryString ? `/orders?${queryString}` : '/orders';
+  
+  return apiClient.get<Order[]>(endpoint);
 }
 
 export async function createOrder(order: CreateOrderRequest): Promise<Order> {

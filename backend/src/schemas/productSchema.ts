@@ -5,4 +5,5 @@ export const productSchema = z.object({
   description: z.string().optional(),
   price: z.number().optional(),
   iconId: z.string().optional(),
+  isDraft: z.boolean().optional(),
 });

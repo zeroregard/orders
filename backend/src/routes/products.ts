@@ -48,15 +48,27 @@ const router = Router();
  *               items:
  *                 $ref: '#/components/schemas/Product'
  */
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
   try {
     console.log('Attempting to fetch products...');
+    
+    const { includeDrafts = 'true', draftsOnly = 'false' } = req.query;
+    
+    let where: any = {};
+    
+    if (draftsOnly === 'true') {
+      where.isDraft = true;
+    } else if (includeDrafts === 'false') {
+      where.isDraft = false;
+    }
+    // If includeDrafts is true (default), we don't filter by isDraft
     
     // Test database connection first
     await prisma.$connect();
     console.log('Database connection successful');
     
     const products = await prisma.product.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
         orderLineItems: {
@@ -224,9 +236,9 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Invalid product data', details: parseResult.error.errors });
     }
     
-    const { name, description, price, iconId } = parseResult.data;
+    const { name, description, price, iconId, isDraft = false } = parseResult.data;
     const product = await prisma.product.create({
-      data: { name, description, price, iconId }
+      data: { name, description, price, iconId, isDraft }
     });
     
     res.status(201).json(product);

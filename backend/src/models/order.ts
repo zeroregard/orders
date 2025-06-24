@@ -10,4 +10,13 @@ export interface Order {
   creationDate: string; // ISO
   purchaseDate: string; // ISO
   lineItems: OrderLineItem[];
+  isDraft?: boolean;
+  source?: OrderSource;
+  originalEmailHash?: string;
+}
+
+export enum OrderSource {
+  MANUAL = 'MANUAL',
+  EMAIL = 'EMAIL',
+  API = 'API'
 }

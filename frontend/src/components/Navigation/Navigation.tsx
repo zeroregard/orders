@@ -23,6 +23,12 @@ export function Navigation() {
         >
           Orders
         </NavLink>
+        <NavLink 
+          to="/drafts" 
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+        >
+          Drafts
+        </NavLink>
       </motion.div>
     </nav>
   );

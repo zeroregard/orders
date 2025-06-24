@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Navigation } from './components';
-import { ProductsPage, ProductDetailPage, OrdersPage, OrderDetailPage } from './pages';
+import { ProductsPage, ProductDetailPage, OrdersPage, OrderDetailPage, DraftsPage } from './pages';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { apiClient } from './utils/apiClient';
 import { useEffect } from 'react';
@@ -114,6 +114,11 @@ const AppContent = () => {
           <Route path="/orders/:id" element={
             <ProtectedRoute>
               <OrderDetailPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/drafts" element={
+            <ProtectedRoute>
+              <DraftsPage />
             </ProtectedRoute>
           } />
           

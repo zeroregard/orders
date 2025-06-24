@@ -13,6 +13,7 @@ model Product {
   description       String?
   price             Float?
   iconId            String?
+  isDraft           Boolean           @default(false)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   orderLineItems    OrderLineItem[]
@@ -23,16 +24,25 @@ model Product {
 }
 
 model Order {
-  id           String          @id @default(uuid())
-  name         String
-  creationDate DateTime
-  purchaseDate DateTime
-  userId       String?         // Optional for now to support existing data
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  lineItems    OrderLineItem[]
+  id                String          @id @default(uuid())
+  name              String
+  creationDate      DateTime
+  purchaseDate      DateTime
+  userId            String?         // Optional for now to support existing data
+  isDraft           Boolean         @default(true)
+  source            OrderSource     @default(MANUAL)
+  originalEmailHash String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  lineItems         OrderLineItem[]
 
   @@map("orders")
+}
+
+enum OrderSource {
+  MANUAL
+  EMAIL
+  API
 }
 
 model OrderLineItem {
@@ -75,4 +85,28 @@ model PushSubscription {
   updatedAt DateTime @updatedAt
 
   @@map("push_subscriptions")
+}
+
+model EmailProcessingLog {
+  id           String           @id @default(uuid())
+  emailHash    String           @unique
+  senderEmail  String
+  subject      String?
+  rawContent   String
+  status       ProcessingStatus
+  errorMessage String?
+  orderId      String?
+  processedAt  DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@map("email_processing_logs")
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DUPLICATE
 }

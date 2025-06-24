@@ -11,4 +11,7 @@ export const orderSchema = z.object({
   creationDate: z.string().min(1, 'Creation date is required'),
   purchaseDate: z.string().min(1, 'Purchase date is required'),
   lineItems: z.array(orderLineItemSchema).min(1, 'At least one line item is required'),
+  isDraft: z.boolean().optional(),
+  source: z.enum(['MANUAL', 'EMAIL', 'API']).optional(),
+  originalEmailHash: z.string().optional(),
 });

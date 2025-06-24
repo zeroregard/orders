@@ -7,10 +7,9 @@ export interface Product {
   description?: string;
   price?: number;
   iconId?: string;
+  isDraft?: boolean;
   createdAt: string;
   updatedAt: string;
-  lastOrdered?: string;
-  nextPredictedPurchase?: string;
 }
 
 export interface Order {
@@ -18,6 +17,9 @@ export interface Order {
   name: string;
   creationDate: string;
   purchaseDate: string;
+  isDraft?: boolean;
+  source?: 'MANUAL' | 'EMAIL' | 'API';
+  originalEmailHash?: string;
   createdAt: string;
   updatedAt: string;
   lineItems: OrderLineItem[];
@@ -36,14 +38,12 @@ export interface CreateProductRequest {
   name: string;
   description?: string;
   price?: number;
-  iconId?: string;
 }
 
 export interface UpdateProductRequest {
   name?: string;
   description?: string;
   price?: number;
-  iconId?: string;
 }
 
 export interface CreateOrderRequest {
@@ -59,8 +59,7 @@ export interface CreateOrderRequest {
 
 export interface PredictionResponse {
   productId: string;
-  predictedPurchaseDates: string[];
-  averageFrequency: string; // ISO Duration string
+  predictedNextPurchaseDate: string;
 }
 
 export interface AuthUser {

@@ -1,5 +1,5 @@
 // Orders
-export { OrdersPage, OrderDetailPage } from './Orders';
+export { OrdersPage, OrderDetailPage, DraftsPage } from './Orders';
 export { OrderForm, OrderList } from './Orders/components';
 
 // Products

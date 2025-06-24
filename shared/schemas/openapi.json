@@ -254,6 +254,9 @@
                   },
                   "price": {
                     "type": "number"
+                  },
+                  "iconId": {
+                    "type": "string"
                   }
                 },
                 "example": {
@@ -305,6 +308,93 @@
             "description": "Product not found"
           }
         }
+      },
+      "get": {
+        "summary": "Get a product by ID",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Product ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      }
+    },
+    "/api/products/{id}/purchase-history": {
+      "get": {
+        "summary": "Get purchase history for a product",
+        "tags": [
+          "Products"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Product ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase history retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "max": {
+                      "type": "number",
+                      "description": "Maximum quantity purchased on any single date"
+                    },
+                    "purchases": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": {
+                            "type": "string",
+                            "format": "date"
+                          },
+                          "quantity": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
       }
     },
     "/api/orders": {
@@ -312,6 +402,26 @@
         "summary": "Get all orders",
         "tags": [
           "Orders"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "includeDrafts",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            },
+            "description": "Whether to include draft orders"
+          },
+          {
+            "in": "query",
+            "name": "draftsOnly",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            },
+            "description": "Whether to return only draft orders"
+          }
         ],
         "responses": {
           "200": {
@@ -516,13 +626,167 @@
         }
       }
     },
+    "/api/orders/drafts": {
+      "get": {
+        "summary": "Get all draft orders",
+        "tags": [
+          "Orders"
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all draft orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Order"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/approve": {
+      "post": {
+        "summary": "Approve a draft order (convert to regular order)",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order approved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Order is not a draft"
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/draft": {
+      "delete": {
+        "summary": "Delete a draft order",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order ID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Draft order deleted successfully"
+          },
+          "400": {
+            "description": "Order is not a draft"
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a draft order",
+        "tags": [
+          "Orders"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Order ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "creationDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "purchaseDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "lineItems": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/OrderLineItem"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Draft order updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Order is not a draft"
+          },
+          "404": {
+            "description": "Order not found"
+          }
+        }
+      }
+    },
     "/api/predictions/{productId}": {
       "get": {
-        "summary": "Predict next purchase date for a product",
+        "summary": "Predict next purchase date and recommended quantity for a product",
         "tags": [
           "Predictions"
         ],
-        "description": "Analyzes past orders to predict when a product will likely be purchased again. Requires at least 2 previous orders containing the product.",
+        "description": "Analyzes past orders to predict when a product will likely be purchased again and in what quantity. Requires at least 2 previous orders containing the product.",
         "parameters": [
           {
             "in": "path",
@@ -547,15 +811,37 @@
                       "type": "string",
                       "description": "The product ID"
                     },
-                    "predictedNextPurchaseDate": {
+                    "predictedPurchaseDates": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Predicted date for next purchase (YYYY-MM-DD format)"
+                      }
+                    },
+                    "averageFrequency": {
                       "type": "string",
-                      "format": "date",
-                      "description": "Predicted date for next purchase (YYYY-MM-DD format)"
+                      "description": "Average frequency of purchases"
+                    },
+                    "recommendedQuantity": {
+                      "type": "number",
+                      "description": "Recommended quantity to purchase based on past orders"
+                    },
+                    "monthlyConsumption": {
+                      "type": "number",
+                      "description": "Estimated monthly consumption rate"
                     }
                   },
                   "example": {
                     "productId": "123e4567-e89b-12d3-a456-426614174000",
-                    "predictedNextPurchaseDate": "2025-07-15"
+                    "predictedPurchaseDates": [
+                      "2025-07-15",
+                      "2025-08-15",
+                      "2025-09-15"
+                    ],
+                    "averageFrequency": "P1W",
+                    "recommendedQuantity": 2,
+                    "monthlyConsumption": 4.5
                   }
                 }
               }

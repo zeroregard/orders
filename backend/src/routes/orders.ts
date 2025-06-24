@@ -79,6 +79,19 @@ const router = Router();
  *   get:
  *     summary: Get all orders
  *     tags: [Orders]
+ *     parameters:
+ *       - in: query
+ *         name: includeDrafts
+ *         schema:
+ *           type: boolean
+ *           default: true
+ *         description: Whether to include draft orders
+ *       - in: query
+ *         name: draftsOnly
+ *         schema:
+ *           type: boolean
+ *           default: false
+ *         description: Whether to return only draft orders
  *     responses:
  *       200:
  *         description: List of all orders
@@ -89,9 +102,21 @@ const router = Router();
  *               items:
  *                 $ref: '#/components/schemas/Order'
  */
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
   try {
+    const { includeDrafts = 'true', draftsOnly = 'false' } = req.query;
+    
+    let where: any = {};
+    
+    if (draftsOnly === 'true') {
+      where.isDraft = true;
+    } else if (includeDrafts === 'false') {
+      where.isDraft = false;
+    }
+    // If includeDrafts is true (default), we don't filter by isDraft
+    
     const orders = await prisma.order.findMany({
+      where,
       include: {
         lineItems: {
           include: {

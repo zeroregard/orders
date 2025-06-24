@@ -1,0 +1,86 @@
+/* Typography styles using Tailwind @apply */
+
+h1 {
+  @apply text-4xl font-bold text-text-primary leading-tight;
+}
+
+h2 {
+  @apply text-3xl font-bold text-text-primary leading-tight;
+}
+
+h3 {
+  @apply text-2xl font-medium text-text-primary leading-snug;
+}
+
+h4 {
+  @apply text-xl font-medium text-text-primary leading-snug;
+}
+
+h5 {
+  @apply text-lg font-medium text-text-primary leading-normal;
+}
+
+h6 {
+  @apply text-base font-medium text-text-primary leading-normal;
+}
+
+p {
+  @apply text-base text-text-primary leading-relaxed;
+}
+
+.text-muted {
+  @apply text-text-secondary;
+}
+
+.text-error {
+  @apply text-status-error;
+}
+
+.text-success {
+  @apply text-status-success;
+}
+
+.text-warning {
+  @apply text-status-warning;
+}
+
+.text-info {
+  @apply text-status-info;
+}
+
+/* Utility typography classes */
+.heading-display {
+  @apply text-5xl font-bold text-text-primary leading-none tracking-tight;
+}
+
+.heading-large {
+  @apply text-3xl font-bold text-text-primary leading-tight;
+}
+
+.heading-medium {
+  @apply text-xl font-semibold text-text-primary leading-snug;
+}
+
+.heading-small {
+  @apply text-lg font-medium text-text-primary leading-normal;
+}
+
+.body-large {
+  @apply text-lg text-text-primary leading-relaxed;
+}
+
+.body-medium {
+  @apply text-base text-text-primary leading-relaxed;
+}
+
+.body-small {
+  @apply text-sm text-text-primary leading-normal;
+}
+
+.caption {
+  @apply text-xs text-text-secondary leading-normal;
+}
+
+.label {
+  @apply text-sm font-medium text-text-primary leading-normal;
+} 

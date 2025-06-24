@@ -6,6 +6,7 @@ import authRouter from './auth';
 import pushNotificationsRouter from './pushNotifications';
 import predictionsRouter from './predictions';
 import purchasePatternsRouter from './purchasePatterns';
+import geminiRouter from './gemini';
 
 const router = Router();
 
@@ -15,5 +16,6 @@ router.use('/auth', authRouter);
 router.use('/push-notifications', pushNotificationsRouter);
 router.use('/predictions', predictionsRouter);
 router.use('/purchase-patterns', purchasePatternsRouter);
+router.use('/gemini', geminiRouter);
 
 export default router;
